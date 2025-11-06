@@ -9,7 +9,7 @@ df = pd.read_csv("Latest ODI Matches Till 2025 Updated.csv")
 
 # Convert ballDateTime to datetime (to extract year easily)
 df["ballDateTime"] = pd.to_datetime(df["ballDateTime"], errors="coerce", dayfirst=True)
-df["Year"] = df["ballDateTime"].dt.year
+df["Year"] = df["ballDateTime"].dt.year.astype("Int64")
 
 # Sidebar filters
 st.sidebar.header("Filters")
