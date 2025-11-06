@@ -31,32 +31,46 @@ if years:
     filtered_df = filtered_df[filtered_df["Year"].isin(years)]
 filtered_df = filtered_df[(filtered_df["overNumber"] >= over_range[0]) & (filtered_df["overNumber"] <= over_range[1])]
 
-# Function to group and summarize
+# Function to group and summarize with extra metrics
 def make_group_table(df, group_by_col):
     temp_df = df[df["isWide"] != True]
     
-    group = temp_df.groupby(group_by_col)["runsScored"].agg(
-        Total_Runs="sum",
-        Balls_Faced="count"
+    group = temp_df.groupby(group_by_col).agg(
+        Total_Runs=("runsScored", "sum"),
+        Balls_Faced=("runsScored", "count"),
+        Fours=("runsScored", lambda x: (x==4).sum()),
+        Sixes=("runsScored", lambda x: (x==6).sum()),
+        Dot_Balls=("runsScored", lambda x: (x==0).sum())
     ).reset_index()
     
     group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
-    group.rename(columns={"Total_Runs": "Total Runs", "Balls_Faced": "Balls Faced"}, inplace=True)
+    group["Boundary %"] = round(((group["Fours"] + group["Sixes"]) / group["Balls_Faced"]) * 100, 2)
+    group["Dot Ball %"] = round((group["Dot_Balls"] / group["Balls_Faced"]) * 100, 2)
     
-    # Sort first, then add total at the end
+    # Sort by strike rate
     group = group.sort_values(by="Strike Rate", ascending=False).reset_index(drop=True)
     
-    total_runs = group["Total Runs"].sum()
-    total_balls = group["Balls Faced"].sum()
-    total_sr = round((total_runs / total_balls) * 100, 2) if total_balls > 0 else 0
+    # Add total row
     total_row = pd.DataFrame({
         group_by_col: ["Total"],
-        "Total Runs": [total_runs],
-        "Balls Faced": [total_balls],
-        "Strike Rate": [total_sr]
+        "Total_Runs": [group["Total_Runs"].sum()],
+        "Balls_Faced": [group["Balls_Faced"].sum()],
+        "Fours": [group["Fours"].sum()],
+        "Sixes": [group["Sixes"].sum()],
+        "Dot_Balls": [group["Dot_Balls"].sum()],
+        "Strike Rate": [round(group["Total_Runs"].sum() / group["Balls_Faced"].sum() * 100, 2)],
+        "Boundary %": [round((group["Fours"].sum() + group["Sixes"].sum()) / group["Balls_Faced"].sum() * 100, 2)],
+        "Dot Ball %": [round(group["Dot_Balls"].sum() / group["Balls_Faced"].sum() * 100, 2)]
     })
     
     group = pd.concat([group, total_row], ignore_index=True)
+    
+    # Rename columns for display
+    group.rename(columns={
+        "Total_Runs": "Total Runs",
+        "Balls_Faced": "Balls Faced",
+        "Dot_Balls": "Dot Balls"
+    }, inplace=True)
     
     return group
 
