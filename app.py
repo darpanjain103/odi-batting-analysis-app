@@ -71,6 +71,16 @@ tabs = st.tabs([
     "BowlerPlayer Summary"
 ])
 
+# Display Tables in Tabs with custom names
+tabs = st.tabs([
+    "Batting Feet",
+    "Length Type",
+    "Line Type",
+    "Ball Type",
+    "Bowling End",
+    "Bowling Type",
+    "Bowler"
+])
 # Assign each tab to a variable for clarity
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = tabs
 
