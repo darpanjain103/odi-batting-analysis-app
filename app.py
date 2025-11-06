@@ -87,15 +87,15 @@ def make_group_table(df, group_by_col):
 
 # Display Tables in Tabs with custom names, including new ones
 tabs = st.tabs([
-    "Batting Feet",
-    "Length Type",
-    "Line Type",
+    "Feet",
+    "Length",
+    "Line",
     "Ball Type",
     "Bowling End",
     "Bowling Type",
     "Bowler",
-    "Shot Type",       # new
-    "Bowling Hand",    # new
+    "Shot",       # new
+    "Hand",    # new
     "Shot Area"        # new
 ])
 
