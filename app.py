@@ -50,7 +50,7 @@ def make_group_table(df, group_by_col, display_name=None):
     group["Dot Ball %"] = round((group["Dot_Balls"] / group["Balls_Faced"]) * 100, 2)
     
     # Average = Runs / Outs (avoid division by zero)
-    group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"],2) if x["Outs"]>0 else x["Total_Runs"], axis=1)
+    group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"],2) if x["Outs"]>0 else "-", axis=1)
     
     # Sort by strike rate
     group = group.sort_values(by="Strike Rate", ascending=False).reset_index(drop=True)
@@ -58,16 +58,16 @@ def make_group_table(df, group_by_col, display_name=None):
     # Add total row
     total_row = pd.DataFrame({
         group_by_col: ["Total"],
-        "Total_Runs": [group["Total_Runs"].sum()],
-        "Balls_Faced": [group["Balls_Faced"].sum()],
+        "Total_Runs": [group["Runs"].sum() if "Runs" in group.columns else group["Total_Runs"].sum()],
+        "Balls_Faced": [group["Balls"].sum() if "Balls" in group.columns else group["Balls_Faced"].sum()],
         "Fours": [group["Fours"].sum()],
         "Sixes": [group["Sixes"].sum()],
-        "Dot_Balls": [group["Dot_Balls"].sum()],
+        "Dot_Balls": [group["Dot Balls"].sum() if "Dot Balls" in group.columns else group["Dot_Balls"].sum()],
         "Outs": [group["Outs"].sum()],
         "Strike Rate": [round(group["Total_Runs"].sum() / group["Balls_Faced"].sum() * 100, 2)],
         "Boundary %": [round((group["Fours"].sum() + group["Sixes"].sum()) / group["Balls_Faced"].sum() * 100, 2)],
         "Dot Ball %": [round(group["Dot_Balls"].sum() / group["Balls_Faced"].sum() * 100, 2)],
-        "Average": [round(group["Total_Runs"].sum() / group["Outs"].sum(),2) if group["Outs"].sum()>0 else group["Total_Runs"].sum()]
+        "Average": ["-" if group["Outs"].sum()==0 else round(group["Total_Runs"].sum() / group["Outs"].sum(),2)]
     })
     
     group = pd.concat([group, total_row], ignore_index=True)
@@ -102,7 +102,7 @@ def make_length_line_table(df):
 
     # Compute Strike Rate and Average
     group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
-    group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"],2) if x["Outs"]>0 else x["Total_Runs"], axis=1)
+    group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"],2) if x["Outs"]>0 else "-", axis=1)
 
     # Combine into "SR / Avg" string
     group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
