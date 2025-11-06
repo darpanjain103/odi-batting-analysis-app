@@ -61,7 +61,18 @@ def make_group_table(df, group_by_col):
     return group
 
 # Display Tables in Tabs
-tab1, tab2, tab3 = st.tabs(["BattingFeetId Summary", "LengthTypeId Summary", "LineTypeId Summary"])
+tabs = st.tabs([
+    "BattingFeetId Summary",
+    "LengthTypeId Summary",
+    "LineTypeId Summary",
+    "BowlingDetailId Summary",
+    "BowlingFromId Summary",
+    "BowlingTypeId Summary",
+    "BowlerPlayer Summary"
+])
+
+# Assign each tab to a variable for clarity
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = tabs
 
 with tab1:
     st.dataframe(make_group_table(filtered_df, "battingFeetId"))
@@ -71,3 +82,15 @@ with tab2:
 
 with tab3:
     st.dataframe(make_group_table(filtered_df, "lineTypeId"))
+
+with tab4:
+    st.dataframe(make_group_table(filtered_df, "bowlingDetailId"))
+
+with tab5:
+    st.dataframe(make_group_table(filtered_df, "bowlingFromId"))
+
+with tab6:
+    st.dataframe(make_group_table(filtered_df, "bowlingTypeId"))
+
+with tab7:
+    st.dataframe(make_group_table(filtered_df, "bowlerPlayer"))
