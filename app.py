@@ -31,7 +31,7 @@ if years:
     filtered_df = filtered_df[filtered_df["Year"].isin(years)]
 filtered_df = filtered_df[(filtered_df["overNumber"] >= over_range[0]) & (filtered_df["overNumber"] <= over_range[1])]
 
-# Function to group and summarize with extra metrics, Outs, Average, and display name
+# Function to group and summarize with extra metrics, Outs, Average, Control, and display name
 def make_group_table(df, group_by_col, display_name=None):
     temp_df = df[df["isWide"] != True]
     
@@ -41,7 +41,8 @@ def make_group_table(df, group_by_col, display_name=None):
         Fours=("runsScored", lambda x: (x==4).sum()),
         Sixes=("runsScored", lambda x: (x==6).sum()),
         Dot_Balls=("runsScored", lambda x: (x==0).sum()),
-        Outs=("isWicket", "sum")  # count of True
+        Outs=("isWicket", "sum"),  # count of True
+        Control=("battingConnectionId", lambda x: x.isin(['Left', 'Middled', 'None', 'WellTimed']).sum())
     ).reset_index()
     
     # Strike rate
@@ -64,6 +65,7 @@ def make_group_table(df, group_by_col, display_name=None):
         "Sixes": [group["Sixes"].sum()],
         "Dot_Balls": [group["Dot Balls"].sum() if "Dot Balls" in group.columns else group["Dot_Balls"].sum()],
         "Outs": [group["Outs"].sum()],
+        "Control": [group["Control"].sum()],
         "Strike Rate": [round(group["Total_Runs"].sum() / group["Balls_Faced"].sum() * 100, 2)],
         "Boundary %": [round((group["Fours"].sum() + group["Sixes"].sum()) / group["Balls_Faced"].sum() * 100, 2)],
         "Dot Ball %": [round(group["Dot_Balls"].sum() / group["Balls_Faced"].sum() * 100, 2)],
@@ -80,7 +82,7 @@ def make_group_table(df, group_by_col, display_name=None):
     }, inplace=True)
     
     # Reorder columns while keeping group_by_col first
-    metric_order = ["Runs", "Balls", "Outs", "Average", "Strike Rate", "Fours", "Sixes", "Dot Balls", "Dot Ball %", "Boundary %"]
+    metric_order = ["Runs", "Balls", "Outs", "Average", "Strike Rate", "Fours", "Sixes", "Dot Balls", "Dot Ball %", "Boundary %", "Control"]
     group = group[[group_by_col] + metric_order]
     
     # Rename the grouping column to a friendly name
