@@ -31,8 +31,8 @@ if years:
     filtered_df = filtered_df[filtered_df["Year"].isin(years)]
 filtered_df = filtered_df[(filtered_df["overNumber"] >= over_range[0]) & (filtered_df["overNumber"] <= over_range[1])]
 
-# Function to group and summarize with extra metrics, Outs, and Average
-def make_group_table(df, group_by_col):
+# Function to group and summarize with extra metrics, Outs, Average, and display name
+def make_group_table(df, group_by_col, display_name=None):
     temp_df = df[df["isWide"] != True]
     
     group = temp_df.groupby(group_by_col).agg(
@@ -83,50 +83,54 @@ def make_group_table(df, group_by_col):
     metric_order = ["Runs", "Balls", "Outs", "Average", "Strike Rate", "Fours", "Sixes", "Dot Balls", "Dot Ball %", "Boundary %"]
     group = group[[group_by_col] + metric_order]
     
+    # Rename the grouping column to a friendly name
+    if display_name:
+        group.rename(columns={group_by_col: display_name}, inplace=True)
+    
     return group
 
-# Display Tables in Tabs with custom names, including new ones
+# Display Tables in Tabs with custom names
 tabs = st.tabs([
-    "Feet",
+    "Foot Type",
     "Length",
     "Line",
     "Ball Type",
     "Bowling End",
     "Bowling Type",
     "Bowler",
-    "Shot",       # new
-    "Hand",    # new
-    "Shot Area"        # new
+    "Shot",
+    "Bowling Hand",
+    "Shot Area"
 ])
 
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = tabs
 
 with tab1:
-    st.dataframe(make_group_table(filtered_df, "battingFeetId"))
+    st.dataframe(make_group_table(filtered_df, "battingFeetId", display_name="Foot Type"))
 
 with tab2:
-    st.dataframe(make_group_table(filtered_df, "lengthTypeId"))
+    st.dataframe(make_group_table(filtered_df, "lengthTypeId", display_name="Length"))
 
 with tab3:
-    st.dataframe(make_group_table(filtered_df, "lineTypeId"))
+    st.dataframe(make_group_table(filtered_df, "lineTypeId", display_name="Line"))
 
 with tab4:
-    st.dataframe(make_group_table(filtered_df, "bowlingDetailId"))
+    st.dataframe(make_group_table(filtered_df, "bowlingDetailId", display_name="Ball Type"))
 
 with tab5:
-    st.dataframe(make_group_table(filtered_df, "bowlingFromId"))
+    st.dataframe(make_group_table(filtered_df, "bowlingFromId", display_name="Bowling End"))
 
 with tab6:
-    st.dataframe(make_group_table(filtered_df, "bowlingTypeId"))
+    st.dataframe(make_group_table(filtered_df, "bowlingTypeId", display_name="Bowling Type"))
 
 with tab7:
-    st.dataframe(make_group_table(filtered_df, "bowlerPlayer"))
+    st.dataframe(make_group_table(filtered_df, "bowlerPlayer", display_name="Bowler"))
 
 with tab8:
-    st.dataframe(make_group_table(filtered_df, "battingShotTypeId"))
+    st.dataframe(make_group_table(filtered_df, "battingShotTypeId", display_name="Shot"))
 
 with tab9:
-    st.dataframe(make_group_table(filtered_df, "bowlingHandId"))
+    st.dataframe(make_group_table(filtered_df, "bowlingHandId", display_name="Bowling Hand"))
 
 with tab10:
-    st.dataframe(make_group_table(filtered_df, "fieldingPosition"))
+    st.dataframe(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"))
