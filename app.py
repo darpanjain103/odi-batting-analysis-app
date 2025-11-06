@@ -204,5 +204,5 @@ with tab10:
     st.dataframe(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"))
 
 with tab11:
-    st.markdown("**[Strike Rate/Average]**")
+    st.markdown("**[Strike Rate/Average]:**")
     st.dataframe(make_length_line_table(filtered_df))
