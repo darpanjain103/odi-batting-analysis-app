@@ -43,7 +43,7 @@ def make_group_table(df, group_by_col, display_name=None):
         Dot_Balls=("runsScored", lambda x: (x==0).sum()),
         Outs=("isWicket", "sum"),  # count of True
         # Updated Control to include 'None' correctly
-        Control=("battingConnectionId", lambda x: x.fillna('None')(['Left', 'Middled', 'WellTimed', 'None']).sum())
+        Control=("battingConnectionId", lambda x: x.fillna('None').isin(['Left', 'Middled', 'WellTimed', 'None']).sum())
     ).reset_index()
     
     # Strike rate
