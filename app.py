@@ -1,15 +1,15 @@
 import streamlit as st
 import pandas as pd
 
-# App Title
+# Title
 st.title("ODI Batting Analysis App")
 
-# Load data
+# Load the dataset (relative path for Streamlit Cloud)
 df = pd.read_csv("Latest ODI Matches Till 2025 Updated.csv")
 
-# Convert ballDateTime → datetime and extract year
+# Convert ballDateTime to datetime (to extract year easily)
 df["ballDateTime"] = pd.to_datetime(df["ballDateTime"], errors="coerce", dayfirst=True)
-df["Year"] = df["ballDateTime"].dt.year.astype("Int64")  # removes .0
+df["Year"] = df["ballDateTime"].dt.year.astype("Int64")
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -29,26 +29,22 @@ if bowlers:
     filtered_df = filtered_df[filtered_df["bowlerPlayer"].isin(bowlers)]
 if years:
     filtered_df = filtered_df[filtered_df["Year"].isin(years)]
-filtered_df = filtered_df[
-    (filtered_df["overNumber"] >= over_range[0]) & (filtered_df["overNumber"] <= over_range[1])
-]
+filtered_df = filtered_df[(filtered_df["overNumber"] >= over_range[0]) & (filtered_df["overNumber"] <= over_range[1])]
 
-# Grouping function
+# Function to group and summarize
 def make_group_table(df, group_by_col):
     temp_df = df[df["isWide"] != True]
-
-    group = (
-        temp_df.groupby(group_by_col)["runsScored"]
-        .agg(Total_Runs="sum", Balls_Faced="count")
-        .reset_index()
-    )
-
+    
+    group = temp_df.groupby(group_by_col)["runsScored"].agg(
+        Total_Runs="sum",
+        Balls_Faced="count"
+    ).reset_index()
+    
     group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
     group.rename(columns={"Total_Runs": "Total Runs", "Balls_Faced": "Balls Faced"}, inplace=True)
-
-    # Sort before adding total
+    
     group = group.sort_values(by="Strike Rate", ascending=False).reset_index(drop=True)
-
+    
     total_runs = group["Total Runs"].sum()
     total_balls = group["Balls Faced"].sum()
     total_sr = round((total_runs / total_balls) * 100, 2) if total_balls > 0 else 0
@@ -56,30 +52,22 @@ def make_group_table(df, group_by_col):
         group_by_col: ["Total"],
         "Total Runs": [total_runs],
         "Balls Faced": [total_balls],
-        "Strike Rate": [total_sr],
+        "Strike Rate": [total_sr]
     })
-
+    
     group = pd.concat([group, total_row], ignore_index=True)
-
-    # Clean display — reset index and format layout
-    group.reset_index(drop=True, inplace=True)
     return group
 
-# Wider display layout
-st.markdown(
-    """
+# Hide index numbers with CSS
+hide_table_row_index = """
     <style>
-        .dataframe tbody tr th {display: none;}
-        .dataframe td, .dataframe th {
-            text-align: left !important;
-            white-space: nowrap !important;
-        }
+    thead tr th:first-child {display:none}
+    tbody th {display:none}
     </style>
-    """,
-    unsafe_allow_html=True,
-)
+"""
+st.markdown(hide_table_row_index, unsafe_allow_html=True)
 
-# Display tables
+# Display Tables
 st.header("📊 BattingFeetId Summary")
 st.dataframe(make_group_table(filtered_df, "battingFeetId"), use_container_width=True)
 
