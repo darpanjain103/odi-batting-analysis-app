@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # Title
-st.title("ENG vs IND Series: Batting Analysis App")
+st.title("ODI Batting Analysis App")
 
 # Load the dataset (relative path for Streamlit Cloud)
 df = pd.read_csv("Latest ODI Matches Till 2025 Updated.csv")
