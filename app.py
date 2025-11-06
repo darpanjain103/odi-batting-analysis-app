@@ -31,7 +31,7 @@ if years:
     filtered_df = filtered_df[filtered_df["Year"].isin(years)]
 filtered_df = filtered_df[(filtered_df["overNumber"] >= over_range[0]) & (filtered_df["overNumber"] <= over_range[1])]
 
-# Function to group and summarize with extra metrics, Outs, Average, Control, False Shot
+# Function to group and summarize with extra metrics, Outs, Average, Control, and False Shot %
 def make_group_table(df, group_by_col, display_name=None):
     temp_df = df[df["isWide"] != True]
     
@@ -51,9 +51,8 @@ def make_group_table(df, group_by_col, display_name=None):
     group["Dot Ball %"] = round((group["Dot_Balls"] / group["Balls_Faced"]) * 100, 2)
     group["Control %"] = round((group["Control"] / group["Balls_Faced"]) * 100, 2)
     
-    # False Shot = Balls - Control
-    group["False Shot"] = group["Balls_Faced"] - group["Control"]
-    group["False Shot %"] = round((group["False Shot"] / group["Balls_Faced"]) * 100, 2)
+    # False Shot % = (Balls - Control) / Balls * 100
+    group["False Shot %"] = round(((group["Balls_Faced"] - group["Control"]) / group["Balls_Faced"]) * 100, 2)
     
     # Average = Runs / Outs (avoid division by zero)
     group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"],2) if x["Outs"]>0 else "-", axis=1)
@@ -75,8 +74,7 @@ def make_group_table(df, group_by_col, display_name=None):
         "Boundary %": [round((group["Fours"].sum() + group["Sixes"].sum()) / group["Balls_Faced"].sum() * 100, 2)],
         "Dot Ball %": [round(group["Dot_Balls"].sum() / group["Balls_Faced"].sum() * 100, 2)],
         "Control %": [round(group["Control"].sum() / group["Balls_Faced"].sum() * 100, 2)],
-        "False Shot": [group["False Shot"].sum()],
-        "False Shot %": [round(group["False Shot"].sum() / group["Balls_Faced"].sum() * 100, 2)],
+        "False Shot %": [round(((group["Balls_Faced"].sum() - group["Control"].sum()) / group["Balls_Faced"].sum()) * 100, 2)],
         "Average": ["-" if group["Outs"].sum()==0 else round(group["Total_Runs"].sum() / group["Outs"].sum(),2)]
     })
     
@@ -90,7 +88,7 @@ def make_group_table(df, group_by_col, display_name=None):
     }, inplace=True)
     
     # Reorder columns while keeping group_by_col first
-    metric_order = ["Runs", "Balls", "Outs", "Average", "Strike Rate", "Fours", "Sixes", "Dot Balls", "Dot Ball %", "Boundary %", "Control", "Control %", "False Shot", "False Shot %"]
+    metric_order = ["Runs", "Balls", "Outs", "Average", "Strike Rate", "Fours", "Sixes", "Dot Balls", "Dot Ball %", "Boundary %", "Control", "Control %", "False Shot %"]
     group = group[[group_by_col] + metric_order]
     
     # Rename the grouping column to a friendly name
