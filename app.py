@@ -143,6 +143,9 @@ def make_length_line_table(df):
             total_row.append(f"{sr} / {avg}")
     pivot_table.loc["Total"] = total_row
 
+    # Rename index for display
+    pivot_table.index.name = "Length"
+
     return pivot_table
 
 # Display Tables in Tabs with custom names
