@@ -45,9 +45,16 @@ def make_group_table(df, group_by_col):
     # Calculate Strike Rate
     group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
     
-    # Rename columns to match original app
+    # Rename columns
     group.rename(columns={"Total_Runs": "Total Runs", "Balls_Faced": "Balls Faced"}, inplace=True)
-    
+
+    # ✅ Add total row at the bottom
+    total_runs = group["Total Runs"].sum()
+    total_balls = group["Balls Faced"].sum()
+    total_sr = round((total_runs / total_balls) * 100, 2) if total_balls > 0 else 0
+    total_row = pd.DataFrame({group_by_col: ["Total"], "Total Runs": [total_runs], "Balls Faced": [total_balls], "Strike Rate": [total_sr]})
+    group = pd.concat([group, total_row], ignore_index=True)
+
     return group.sort_values(by="Strike Rate", ascending=False)
 
 # Display Tables
