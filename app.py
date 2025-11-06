@@ -85,7 +85,7 @@ def make_group_table(df, group_by_col):
     
     return group
 
-# Display Tables in Tabs with custom names
+# Display Tables in Tabs with custom names, including new ones
 tabs = st.tabs([
     "Batting Feet",
     "Length Type",
@@ -93,10 +93,13 @@ tabs = st.tabs([
     "Ball Type",
     "Bowling End",
     "Bowling Type",
-    "Bowler"
+    "Bowler",
+    "Shot Type",       # new
+    "Bowling Hand",    # new
+    "Shot Area"        # new
 ])
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = tabs
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = tabs
 
 with tab1:
     st.dataframe(make_group_table(filtered_df, "battingFeetId"))
@@ -118,3 +121,12 @@ with tab6:
 
 with tab7:
     st.dataframe(make_group_table(filtered_df, "bowlerPlayer"))
+
+with tab8:
+    st.dataframe(make_group_table(filtered_df, "battingShotTypeId"))
+
+with tab9:
+    st.dataframe(make_group_table(filtered_df, "bowlingHandId"))
+
+with tab10:
+    st.dataframe(make_group_table(filtered_df, "fieldingPosition"))
