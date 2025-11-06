@@ -89,6 +89,29 @@ def make_group_table(df, group_by_col, display_name=None):
     
     return group
 
+# Function for Length-Line combined tab
+def make_length_line_table(df):
+    temp_df = df[df["isWide"] != True]
+
+    # Group by both length and line
+    group = temp_df.groupby(["lengthTypeId", "lineTypeId"]).agg(
+        Total_Runs=("runsScored", "sum"),
+        Balls_Faced=("runsScored", "count"),
+        Outs=("isWicket", "sum")
+    ).reset_index()
+
+    # Compute Strike Rate and Average
+    group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
+    group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"],2) if x["Outs"]>0 else x["Total_Runs"], axis=1)
+
+    # Combine into "SR / Avg" string
+    group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
+
+    # Pivot table: Line (Y-axis) vs Length (X-axis)
+    pivot_table = group.pivot(index="lineTypeId", columns="lengthTypeId", values="SR / Avg").fillna("-")
+
+    return pivot_table
+
 # Display Tables in Tabs with custom names
 tabs = st.tabs([
     "Foot Type",
@@ -100,10 +123,11 @@ tabs = st.tabs([
     "Bowler",
     "Shot",
     "Bowling Hand",
-    "Shot Area"
+    "Shot Area",
+    "Length-Line"  # new combined tab
 ])
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = tabs
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11 = tabs
 
 with tab1:
     st.dataframe(make_group_table(filtered_df, "battingFeetId", display_name="Foot Type"))
@@ -134,3 +158,6 @@ with tab9:
 
 with tab10:
     st.dataframe(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"))
+
+with tab11:
+    st.dataframe(make_length_line_table(filtered_df))
