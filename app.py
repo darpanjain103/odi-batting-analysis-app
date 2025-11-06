@@ -79,6 +79,10 @@ def make_group_table(df, group_by_col):
         "Dot_Balls": "Dot Balls"
     }, inplace=True)
     
+    # Reorder columns
+    column_order = ["Runs", "Balls", "Outs", "Average", "Strike Rate", "Fours", "Sixes", "Dot Balls", "Dot Ball %", "Boundary %"]
+    group = group[column_order + [group_by_col]] if group_by_col not in column_order else group[column_order]
+    
     return group
 
 # Display Tables in Tabs with custom names
