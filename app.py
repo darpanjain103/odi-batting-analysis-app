@@ -79,8 +79,8 @@ def make_group_table(df, group_by_col):
         "Dot_Balls": "Dot Balls"
     }, inplace=True)
     
-    # Reorder columns
-    column_order = ["Runs", "Balls", "Outs", "Average", "Strike Rate", "Fours", "Sixes", "Dot Balls", "Dot Ball %", "Boundary %"]
+    # Reorder columns while keeping group_by_col first
+    metric_order = ["Runs", "Balls", "Outs", "Average", "Strike Rate", "Fours", "Sixes", "Dot Balls", "Dot Ball %", "Boundary %"]
     group = group[[group_by_col] + metric_order]
     
     return group
