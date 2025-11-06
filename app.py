@@ -81,7 +81,7 @@ def make_group_table(df, group_by_col):
     
     # Reorder columns
     column_order = ["Runs", "Balls", "Outs", "Average", "Strike Rate", "Fours", "Sixes", "Dot Balls", "Dot Ball %", "Boundary %"]
-    group = group[column_order + [group_by_col]] if group_by_col not in column_order else group[column_order]
+    group = group[[group_by_col] + metric_order]
     
     return group
 
