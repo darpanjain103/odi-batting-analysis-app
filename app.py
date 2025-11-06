@@ -58,21 +58,12 @@ def make_group_table(df, group_by_col):
     group = pd.concat([group, total_row], ignore_index=True)
     return group
 
-# Hide index numbers with CSS
-hide_table_row_index = """
-    <style>
-    thead tr th:first-child {display:none}
-    tbody th {display:none}
-    </style>
-"""
-st.markdown(hide_table_row_index, unsafe_allow_html=True)
-
-# Display Tables
+# Display Tables (no index)
 st.header("📊 BattingFeetId Summary")
-st.dataframe(make_group_table(filtered_df, "battingFeetId"), use_container_width=True)
+st.dataframe(make_group_table(filtered_df, "battingFeetId").reset_index(drop=True), use_container_width=True)
 
 st.header("📊 LengthTypeId Summary")
-st.dataframe(make_group_table(filtered_df, "lengthTypeId"), use_container_width=True)
+st.dataframe(make_group_table(filtered_df, "lengthTypeId").reset_index(drop=True), use_container_width=True)
 
 st.header("📊 LineTypeId Summary")
-st.dataframe(make_group_table(filtered_df, "lineTypeId"), use_container_width=True)
+st.dataframe(make_group_table(filtered_df, "lineTypeId").reset_index(drop=True), use_container_width=True)
