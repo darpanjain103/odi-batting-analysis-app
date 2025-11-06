@@ -62,10 +62,10 @@ def make_group_table(df, group_by_col):
 
 # Display Tables
 st.header("📊 BattingFeetId Summary")
-st.dataframe(make_group_table(filtered_df, "battingFeetId"))
+st.dataframe(make_group_table(filtered_df, "battingFeetId").set_index("battingFeetId"))
 
 st.header("📊 LengthTypeId Summary")
-st.dataframe(make_group_table(filtered_df, "lengthTypeId"))
+st.dataframe(make_group_table(filtered_df, "lengthTypeId").set_index("lengthTypeId"))
 
 st.header("📊 LineTypeId Summary")
-st.dataframe(make_group_table(filtered_df, "lineTypeId"))
+st.dataframe(make_group_table(filtered_df, "lineTypeId").set_index("lineTypeId"))
