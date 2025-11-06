@@ -31,7 +31,7 @@ if years:
     filtered_df = filtered_df[filtered_df["Year"].isin(years)]
 filtered_df = filtered_df[(filtered_df["overNumber"] >= over_range[0]) & (filtered_df["overNumber"] <= over_range[1])]
 
-# Function to group and summarize with extra metrics
+# Function to group and summarize with extra metrics and Outs
 def make_group_table(df, group_by_col):
     temp_df = df[df["isWide"] != True]
     
@@ -40,7 +40,8 @@ def make_group_table(df, group_by_col):
         Balls_Faced=("runsScored", "count"),
         Fours=("runsScored", lambda x: (x==4).sum()),
         Sixes=("runsScored", lambda x: (x==6).sum()),
-        Dot_Balls=("runsScored", lambda x: (x==0).sum())
+        Dot_Balls=("runsScored", lambda x: (x==0).sum()),
+        Outs=("isWicket", "sum")  # count of True
     ).reset_index()
     
     group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
@@ -58,6 +59,7 @@ def make_group_table(df, group_by_col):
         "Fours": [group["Fours"].sum()],
         "Sixes": [group["Sixes"].sum()],
         "Dot_Balls": [group["Dot_Balls"].sum()],
+        "Outs": [group["Outs"].sum()],
         "Strike Rate": [round(group["Total_Runs"].sum() / group["Balls_Faced"].sum() * 100, 2)],
         "Boundary %": [round((group["Fours"].sum() + group["Sixes"].sum()) / group["Balls_Faced"].sum() * 100, 2)],
         "Dot Ball %": [round(group["Dot_Balls"].sum() / group["Balls_Faced"].sum() * 100, 2)]
