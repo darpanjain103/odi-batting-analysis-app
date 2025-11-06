@@ -89,7 +89,7 @@ def make_group_table(df, group_by_col, display_name=None):
     
     return group
 
-# Function for Length-Line combined tab
+# Function for Length-Line combined tab with totals
 def make_length_line_table(df):
     temp_df = df[df["isWide"] != True]
 
@@ -109,6 +109,39 @@ def make_length_line_table(df):
 
     # Pivot table: Line (Y-axis) vs Length (X-axis)
     pivot_table = group.pivot(index="lineTypeId", columns="lengthTypeId", values="SR / Avg").fillna("-")
+
+    # Add total column (for each line)
+    total_col = []
+    for line in pivot_table.index:
+        temp = group[group["lineTypeId"] == line]
+        runs = temp["Total_Runs"].sum()
+        balls = temp["Balls_Faced"].sum()
+        outs = temp["Outs"].sum()
+        sr = round(runs / balls * 100, 2) if balls > 0 else 0
+        avg = round(runs / outs, 2) if outs > 0 else "-"
+        total_col.append(f"{sr} / {avg}")
+    pivot_table["Total"] = total_col
+
+    # Add total row (for each length)
+    total_row = []
+    for length in pivot_table.columns:
+        if length == "Total":
+            # Grand total
+            runs = group["Total_Runs"].sum()
+            balls = group["Balls_Faced"].sum()
+            outs = group["Outs"].sum()
+            sr = round(runs / balls * 100, 2) if balls > 0 else 0
+            avg = round(runs / outs, 2) if outs > 0 else "-"
+            total_row.append(f"{sr} / {avg}")
+        else:
+            temp = group[group["lengthTypeId"] == length]
+            runs = temp["Total_Runs"].sum()
+            balls = temp["Balls_Faced"].sum()
+            outs = temp["Outs"].sum()
+            sr = round(runs / balls * 100, 2) if balls > 0 else 0
+            avg = round(runs / outs, 2) if outs > 0 else "-"
+            total_row.append(f"{sr} / {avg}")
+    pivot_table.loc["Total"] = total_row
 
     return pivot_table
 
