@@ -31,31 +31,34 @@ if years:
     filtered_df = filtered_df[filtered_df["Year"].isin(years)]
 filtered_df = filtered_df[(filtered_df["overNumber"] >= over_range[0]) & (filtered_df["overNumber"] <= over_range[1])]
 
-# Corrected function to count Balls Faced (isWide=True excluded, False or blank included)
+# Function to group and summarize
 def make_group_table(df, group_by_col):
-    # Keep only balls where isWide is not True (blank or False counts as legal ball)
     temp_df = df[df["isWide"] != True]
     
-    # Group and calculate Total Runs and Balls Faced
     group = temp_df.groupby(group_by_col)["runsScored"].agg(
         Total_Runs="sum",
         Balls_Faced="count"
     ).reset_index()
     
-    # Calculate Strike Rate
     group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
-    
-    # Rename columns
     group.rename(columns={"Total_Runs": "Total Runs", "Balls_Faced": "Balls Faced"}, inplace=True)
-
-    # ✅ Add total row at the bottom
+    
+    # ✅ Sort first, then add total at the end
+    group = group.sort_values(by="Strike Rate", ascending=False).reset_index(drop=True)
+    
     total_runs = group["Total Runs"].sum()
     total_balls = group["Balls Faced"].sum()
     total_sr = round((total_runs / total_balls) * 100, 2) if total_balls > 0 else 0
-    total_row = pd.DataFrame({group_by_col: ["Total"], "Total Runs": [total_runs], "Balls Faced": [total_balls], "Strike Rate": [total_sr]})
+    total_row = pd.DataFrame({
+        group_by_col: ["Total"],
+        "Total Runs": [total_runs],
+        "Balls Faced": [total_balls],
+        "Strike Rate": [total_sr]
+    })
+    
     group = pd.concat([group, total_row], ignore_index=True)
-
-    return group.sort_values(by="Strike Rate", ascending=False)
+    
+    return group
 
 # Display Tables
 st.header("📊 BattingFeetId Summary")
