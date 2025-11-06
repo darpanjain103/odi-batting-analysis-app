@@ -67,8 +67,8 @@ def make_group_table(df, group_by_col):
     
     # Rename columns for display
     group.rename(columns={
-        "Total_Runs": "Total Runs",
-        "Balls_Faced": "Balls Faced",
+        "Total_Runs": "Runs",
+        "Balls_Faced": "Balls",
         "Dot_Balls": "Dot Balls"
     }, inplace=True)
     
@@ -79,8 +79,8 @@ tabs = st.tabs([
     "Batting Feet",
     "Length Type",
     "Line Type",
-    "Bowling Detail",
-    "Bowling From",
+    "Ball Type",
+    "Bowling End",
     "Bowling Type",
     "Bowler"
 ])
