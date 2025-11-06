@@ -42,7 +42,7 @@ def make_group_table(df, group_by_col, display_name=None):
         Sixes=("runsScored", lambda x: (x==6).sum()),
         Dot_Balls=("runsScored", lambda x: (x==0).sum()),
         Outs=("isWicket", "sum"),  # count of True
-        Control=("battingConnectionId", lambda x: x.isin(['Left', 'Middled', 'None', 'WellTimed']).sum())
+        Control=("battingConnectionId", lambda x: x.str.strip().isin(['Left', 'Middled', 'None', 'WellTimed']).sum())
     ).reset_index()
     
     # Strike rate
