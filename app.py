@@ -43,6 +43,7 @@ def make_group_table(df, group_by_col):
     group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
     group.rename(columns={"Total_Runs": "Total Runs", "Balls_Faced": "Balls Faced"}, inplace=True)
     
+    # ✅ Sort first, then add total at the end
     group = group.sort_values(by="Strike Rate", ascending=False).reset_index(drop=True)
     
     total_runs = group["Total Runs"].sum()
@@ -56,9 +57,10 @@ def make_group_table(df, group_by_col):
     })
     
     group = pd.concat([group, total_row], ignore_index=True)
+    
     return group
 
-# Display Tables (no index)
+# Display Tables
 st.header("📊 BattingFeetId Summary")
 st.dataframe(make_group_table(filtered_df, "battingFeetId"))
 
