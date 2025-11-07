@@ -179,10 +179,32 @@ if fetch_data:
         st.markdown("*[Strike Rate/Average]:*")
         show_table(make_length_line_table(filtered_df), "length_line")
 
-    # 🆕 NEW SECTION for Bowling Analysis
+        # 🆕 NEW SECTION for Bowling Analysis
     st.markdown("---")
     st.header("🎯 ODI Bowling Analysis")
-    st.info("This section will display bowling analysis (coming soon).")
 
-else:
-    st.info("👈 Adjust filters and click *Fetch* to view results.")
+    bowling_tabs = st.tabs(["Foot Type", "Bowling End", "Ball Type"])
+    tab_b1, tab_b2, tab_b3 = bowling_tabs
+
+    def make_bowling_group_table(df, group_by_col, display_name=None):
+        temp_df = df[df["isWide"] != True]
+
+        group = temp_df.groupby(group_by_col).agg(
+            Runs=("runsConceded", "sum"),
+            Extras=("extras", "sum")
+        ).reset_index()
+
+        if display_name:
+            group.rename(columns={group_by_col: display_name}, inplace=True)
+
+        return group
+
+    with tab_b1:
+        show_table(make_bowling_group_table(filtered_df, "battingFeetId", display_name="Foot Type"), "bowl_foot_type")
+
+    with tab_b2:
+        show_table(make_bowling_group_table(filtered_df, "bowlingFromId", display_name="Bowling End"), "bowl_bowling_end")
+
+    with tab_b3:
+        show_table(make_bowling_group_table(filtered_df, "bowlingDetailId", display_name="Ball Type"), "bowl_ball_type")
+
