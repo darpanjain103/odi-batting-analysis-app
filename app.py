@@ -2,8 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # Title
-st.title("🏏ODI Batting Analysis")
-st.header("🎯ODI Bowling Analysis")
+st.title("ODI Batting & Bowling Analysis")
 
 # Load the dataset (relative path for Streamlit Cloud)
 df = pd.read_csv("Latest ODI Matches Till 2025 Updated.csv")
@@ -182,6 +181,7 @@ if fetch_data:
         st.dataframe(df_display, use_container_width=True, height=dynamic_height)
 
     # ---------- Batting Section ----------
+    st.subheader("🏏 ODI Batting Analysis")
     if batting_players:
         tabs = st.tabs([
             "Foot Type", "Length", "Line", "Ball Type", "Bowling End", "Bowling Type",
@@ -219,6 +219,7 @@ if fetch_data:
     # Show bowling only if bowling is selected AND batting_players is NOT selected
     if bowlers and not batting_players:
         st.markdown("---")
+        st.subheader("🎯 ODI Bowling Analysis")
         bowling_tabs = st.tabs([
             "Foot Type", "Bowling End", "Ball Type", "Shot", "Length", "Line", "Batter"
         ])
