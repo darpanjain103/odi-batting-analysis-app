@@ -41,33 +41,25 @@ def make_group_table(df, group_by_col, display_name=None):
         Fours=("runsScored", lambda x: (x==4).sum()),
         Sixes=("runsScored", lambda x: (x==6).sum()),
         Dot_Balls=("runsScored", lambda x: (x==0).sum()),
-        Outs=("isWicket", "sum"),  # count of True
+        Outs=("isWicket", "sum"),
         Control=("battingConnectionId", lambda x: x.fillna('None').isin(['Left', 'Middled', 'WellTimed', 'None']).sum())
     ).reset_index()
     
-    # Strike rate
     group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
     group["Boundary %"] = round(((group["Fours"] + group["Sixes"]) / group["Balls_Faced"]) * 100, 2)
     group["Dot Ball %"] = round((group["Dot_Balls"] / group["Balls_Faced"]) * 100, 2)
     group["Control %"] = round((group["Control"] / group["Balls_Faced"]) * 100, 2)
-    
-    # False Shot % = (Balls - Control) / Balls * 100
     group["False Shot %"] = round(((group["Balls_Faced"] - group["Control"]) / group["Balls_Faced"]) * 100, 2)
-    
-    # Average = Runs / Outs (avoid division by zero)
     group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"],2) if x["Outs"]>0 else "-", axis=1)
-    
-    # Sort by strike rate
     group = group.sort_values(by="Strike Rate", ascending=False).reset_index(drop=True)
     
-    # Add total row
     total_row = pd.DataFrame({
         group_by_col: ["Total"],
-        "Total_Runs": [group["Runs"].sum() if "Runs" in group.columns else group["Total_Runs"].sum()],
-        "Balls_Faced": [group["Balls"].sum() if "Balls" in group.columns else group["Balls_Faced"].sum()],
+        "Total_Runs": [group["Total_Runs"].sum()],
+        "Balls_Faced": [group["Balls_Faced"].sum()],
         "Fours": [group["Fours"].sum()],
         "Sixes": [group["Sixes"].sum()],
-        "Dot_Balls": [group["Dot Balls"].sum() if "Dot Balls" in group.columns else group["Dot_Balls"].sum()],
+        "Dot_Balls": [group["Dot_Balls"].sum()],
         "Outs": [group["Outs"].sum()],
         "Control": [group["Control"].sum()],
         "Strike Rate": [round(group["Total_Runs"].sum() / group["Balls_Faced"].sum() * 100, 2)],
@@ -79,113 +71,70 @@ def make_group_table(df, group_by_col, display_name=None):
     })
     
     group = pd.concat([group, total_row], ignore_index=True)
-    
-    # Rename columns for display
-    group.rename(columns={
-        "Total_Runs": "Runs",
-        "Balls_Faced": "Balls",
-        "Dot_Balls": "Dot Balls"
-    }, inplace=True)
-    
-    # Reorder columns while keeping group_by_col first
+    group.rename(columns={"Total_Runs": "Runs", "Balls_Faced": "Balls", "Dot_Balls": "Dot Balls"}, inplace=True)
     metric_order = ["Runs", "Balls", "Outs", "Average", "Strike Rate", "Fours", "Sixes", "Dot Balls", "Dot Ball %", "Boundary %", "Control", "Control %", "False Shot %"]
     group = group[[group_by_col] + metric_order]
     
-    # Rename the grouping column to a friendly name
     if display_name:
         group.rename(columns={group_by_col: display_name}, inplace=True)
     
     return group
 
-# Function for Length-Line combined tab with totals (line X-axis, length Y-axis)
 def make_length_line_table(df):
     temp_df = df[df["isWide"] != True]
-
-    # Group by both length and line
     group = temp_df.groupby(["lengthTypeId", "lineTypeId"]).agg(
         Total_Runs=("runsScored", "sum"),
         Balls_Faced=("runsScored", "count"),
         Outs=("isWicket", "sum")
     ).reset_index()
 
-    # Compute Strike Rate and Average
     group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
     group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"],2) if x["Outs"]>0 else "-", axis=1)
-
-    # Combine into "SR / Avg" string
     group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
-
-    # Pivot table: Length (Y-axis) vs Line (X-axis)
     pivot_table = group.pivot(index="lengthTypeId", columns="lineTypeId", values="SR / Avg").fillna("-")
 
-    # Add total column (for each length)
     total_col = []
     for length in pivot_table.index:
         temp = group[group["lengthTypeId"] == length]
-        runs = temp["Total_Runs"].sum()
-        balls = temp["Balls_Faced"].sum()
-        outs = temp["Outs"].sum()
+        runs, balls, outs = temp["Total_Runs"].sum(), temp["Balls_Faced"].sum(), temp["Outs"].sum()
         sr = round(runs / balls * 100, 2) if balls > 0 else 0
         avg = round(runs / outs, 2) if outs > 0 else "-"
         total_col.append(f"{sr} / {avg}")
     pivot_table["Total"] = total_col
 
-    # Add total row (for each line)
     total_row = []
     for line in pivot_table.columns:
-        if line == "Total":
-            # Grand total
-            runs = group["Total_Runs"].sum()
-            balls = group["Balls_Faced"].sum()
-            outs = group["Outs"].sum()
-            sr = round(runs / balls * 100, 2) if balls > 0 else 0
-            avg = round(runs / outs, 2) if outs > 0 else "-"
-            total_row.append(f"{sr} / {avg}")
-        else:
-            temp = group[group["lineTypeId"] == line]
-            runs = temp["Total_Runs"].sum()
-            balls = temp["Balls_Faced"].sum()
-            outs = temp["Outs"].sum()
-            sr = round(runs / balls * 100, 2) if balls > 0 else 0
-            avg = round(runs / outs, 2) if outs > 0 else "-"
-            total_row.append(f"{sr} / {avg}")
+        temp = group[group["lineTypeId"] == line] if line != "Total" else group
+        runs, balls, outs = temp["Total_Runs"].sum(), temp["Balls_Faced"].sum(), temp["Outs"].sum()
+        sr = round(runs / balls * 100, 2) if balls > 0 else 0
+        avg = round(runs / outs, 2) if outs > 0 else "-"
+        total_row.append(f"{sr} / {avg}")
     pivot_table.loc["Total"] = total_row
-
-    # Rename index for display
     pivot_table.index.name = "Length"
 
     return pivot_table
 
-# Helper function for displaying with sticky first column using st.dataframe + index
+# ✅ FIXED: auto height adjustment per tab
 def show_table(df, key):
-    # Make a copy so we don't mutate original
     df_display = df.copy()
-    # Set the first column as index so Streamlit will freeze it when horizontally scrolling
     if df_display.shape[1] > 0:
         first_col = df_display.columns[0]
-        # If the total row label ("Total") exists in the first column, ensure dtype supports it
         try:
             df_display = df_display.set_index(first_col)
         except Exception:
-            # Fallback: convert first column to string then set as index
             df_display[first_col] = df_display[first_col].astype(str)
             df_display = df_display.set_index(first_col)
-    # Show using st.dataframe (index column will stay fixed on horizontal scroll)
-    st.dataframe(df_display, use_container_width=True, height=500)
 
-# Display Tables in Tabs with custom names
+    # Dynamically set height: ~35px per row, min 200, max 600
+    row_height = 35
+    num_rows = len(df_display)
+    dynamic_height = min(max(200, num_rows * row_height), 600)
+
+    st.dataframe(df_display, use_container_width=True, height=dynamic_height)
+
 tabs = st.tabs([
-    "Foot Type",
-    "Length",
-    "Line",
-    "Ball Type",
-    "Bowling End",
-    "Bowling Type",
-    "Bowler",
-    "Shot",
-    "Bowling Hand",
-    "Shot Area",
-    "Length-Line"  # new combined tab
+    "Foot Type", "Length", "Line", "Ball Type", "Bowling End", "Bowling Type",
+    "Bowler", "Shot", "Bowling Hand", "Shot Area", "Length-Line"
 ])
 
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11 = tabs
