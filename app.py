@@ -159,7 +159,7 @@ if fetch_data:
             "Economy": [round((group["Runs"].sum() / group["Balls"].sum()) * 6, 2) if group["Balls"].sum() > 0 else "-"]
         })
         group = pd.concat([group, total_row], ignore_index=True)
-        group = group[[group_by_col, "Runs", "Balls", "Wickets", "Average", "Economy", "Dot %", "Fours", "Sixes", "Boundary %", "False Shot", "False Shot %"]]
+        group = group[[group_by_col, "Runs", "Balls", "Wickets", "Average", "Economy", "Dot %", "Boundary %", "False Shot %"]]
         if display_name:
             group.rename(columns={group_by_col: display_name}, inplace=True)
         return group
