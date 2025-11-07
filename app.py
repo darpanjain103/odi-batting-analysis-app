@@ -126,9 +126,10 @@ def show_table(df, key):
             df_display = df_display.set_index(first_col)
 
     # Dynamically set height: ~35px per row, min 200, max 600
-    row_height = 35
+    row_height = 33
+    header_height = 38
     num_rows = len(df_display)
-    dynamic_height = min(max(60 + num_rows * row_height, 120), 600)
+    dynamic_height = int(header_height + (num_rows * row_height))
 
     st.dataframe(df_display, use_container_width=True, height=dynamic_height)
 
