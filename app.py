@@ -92,30 +92,33 @@ if fetch_data:
         group = pd.concat([group, total_row], ignore_index=True)
         group.rename(columns={"Total_Runs": "Runs", "Balls_Faced": "Balls", "Dot_Balls": "Dot Balls"}, inplace=True)
         metric_order = [
-            "Runs", "Balls", "Outs", "Fours", "Sixes", "Extras", "Boundaries", "Boundary %", "Average", "Economy",
-            "False Shot", "False Shot %", "Dot Balls", "Dot Ball %", "Control", "Control %"
+            "Runs", "Balls", "Outs", "Average", "Strike Rate", "Fours", "Sixes", "Dot Balls",
+            "Dot Ball %", "Boundary %", "Control", "Control %", "False Shot", "False Shot %"
         ]
-        group = group[[group_by_col] + [col for col in metric_order if col in group.columns]]
+        group = group[[group_by_col] + metric_order]
 
         if display_name:
             group.rename(columns={group_by_col: display_name}, inplace=True)
 
         return group
 
-    # ---------- Bowling helper (Updated Column Order) ----------
+    # ---------- Bowling helper ----------
     def make_bowling_group_table_with_total(df, group_by_col, display_name=None):
         if df.empty:
-            return pd.DataFrame(columns=[display_name or group_by_col, "Runs", "Balls", "Wickets", "Fours", "Sixes", "Extras",
-                                         "Boundaries", "Boundary %", "Average", "Economy", "False Shot", "False Shot %"])
+            return pd.DataFrame(columns=[display_name or group_by_col, "Runs", "Extras", "Balls", "Wickets", "Dot", "Dot %", "Fours", "Sixes", "Boundaries", "Boundary %", "False Shot", "False Shot %", "Average", "Economy"])
         temp = df.copy()
         temp_non_wide = temp[(temp["isWide"] != True) & (temp["isNoBall"] != True)]
         def count_valid_wickets(x):
             return ((x["isWicket"] == True) & (~x["dismissalTypeId"].isin(["RunOut", "RunOutSub"]))).sum()
         group = temp.groupby(group_by_col).apply(count_valid_wickets).reset_index(name="Wickets")
+        control_group = temp_non_wide.groupby(group_by_col).agg(
+            Control=("battingConnectionId", lambda x: x.fillna('None').isin(['Left', 'Middled', 'WellTimed', 'None']).sum())
+        ).reset_index()
         if group_by_col == "battingPlayer":
             runs_agg = temp.groupby(group_by_col).agg(
                 Runs=("runsScored", "sum"),
                 Extras=("extras", "sum"),
+                Dot=("runsScored", lambda x: (x == 0).sum()),
                 Fours=("runsScored", lambda x: (x == 4).sum()),
                 Sixes=("runsScored", lambda x: (x == 6).sum())
             ).reset_index()
@@ -123,37 +126,40 @@ if fetch_data:
             runs_agg = temp.groupby(group_by_col).agg(
                 Runs=("runsConceded", "sum"),
                 Extras=("extras", "sum"),
+                Dot=("runsConceded", lambda x: (x == 0).sum()),
                 Fours=("runsConceded", lambda x: (x == 4).sum()),
                 Sixes=("runsConceded", lambda x: (x == 6).sum())
             ).reset_index()
         group = pd.merge(group, runs_agg, on=group_by_col, how="left")
         balls_group = temp_non_wide.groupby(group_by_col).agg(Balls=("ballNumber", "count")).reset_index()
         group = pd.merge(group, balls_group, on=group_by_col, how="left")
+        group = pd.merge(group, control_group, on=group_by_col, how="left")
         group["Boundaries"] = group["Fours"] + group["Sixes"]
         group["Boundary %"] = round((group["Boundaries"] / group["Balls"]) * 100, 2)
-        group["False Shot"] = group["Balls"] - group.get("Control", 0)
+        group["False Shot"] = group["Balls"] - group["Control"]
         group["False Shot %"] = round((group["False Shot"] / group["Balls"]) * 100, 2)
+        group["Dot %"] = round((group["Dot"] / group["Balls"]) * 100, 2)
         group["Average"] = group.apply(lambda x: round(x["Runs"]/x["Wickets"], 2) if x["Wickets"] > 0 else "-", axis=1)
         group["Economy"] = group.apply(lambda x: round((x["Runs"] / x["Balls"]) * 6, 2) if x["Balls"] > 0 else "-", axis=1)
         total_row = pd.DataFrame({
             group_by_col: ["Total"],
             "Runs": [group["Runs"].sum()],
+            "Extras": [group["Extras"].sum()],
             "Balls": [group["Balls"].sum()],
             "Wickets": [group["Wickets"].sum()],
+            "Dot": [group["Dot"].sum()],
+            "Dot %": [round((group["Dot"].sum() / group["Balls"].sum()) * 100, 2) if group["Balls"].sum() > 0 else 0],
             "Fours": [group["Fours"].sum()],
             "Sixes": [group["Sixes"].sum()],
-            "Extras": [group["Extras"].sum()],
             "Boundaries": [group["Boundaries"].sum()],
-            "Boundary %": [round((group["Boundaries"].sum() / group["Balls"].sum()) * 100, 2)],
-            "Average": ["-" if group["Wickets"].sum() == 0 else round(group["Runs"].sum() / group["Wickets"].sum(), 2)],
-            "Economy": [round((group["Runs"].sum() / group["Balls"].sum()) * 6, 2)],
+            "Boundary %": [round((group["Boundaries"].sum() / group["Balls"].sum()) * 100, 2) if group["Balls"].sum() > 0 else 0],
             "False Shot": [group["False Shot"].sum()],
-            "False Shot %": [round((group["False Shot"].sum() / group["Balls"].sum()) * 100, 2)]
+            "False Shot %": [round((group["False Shot"].sum() / group["Balls"].sum()) * 100, 2)],
+            "Average": ["-" if group["Wickets"].sum() == 0 else round(group["Runs"].sum() / group["Wickets"].sum(), 2)],
+            "Economy": [round((group["Runs"].sum() / group["Balls"].sum()) * 6, 2) if group["Balls"].sum() > 0 else "-"]
         })
         group = pd.concat([group, total_row], ignore_index=True)
-        column_order = ["Runs", "Balls", "Wickets", "Fours", "Sixes", "Extras", "Boundaries", "Boundary %",
-                        "Average", "Economy", "False Shot", "False Shot %"]
-        group = group[[group_by_col] + column_order]
+        group = group[[group_by_col, "Runs", "Extras", "Balls", "Wickets", "Dot", "Dot %", "Fours", "Sixes", "Boundaries", "Boundary %", "False Shot", "False Shot %", "Average", "Economy"]]
         if display_name:
             group.rename(columns={group_by_col: display_name}, inplace=True)
         return group
@@ -204,12 +210,13 @@ if fetch_data:
         with tab10:
             show_table(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"), "shot_area")
         with tab11:
-            st.markdown("*[Strike Rate/Average]:*")
+            st.markdown("[Strike Rate/Average]:")
             pass
     else:
         st.info("Select batting player(s) in the Filters to view batting analysis.")
 
     # ---------- Bowling Section ----------
+    # Show bowling only if bowling is selected AND batting_players is NOT selected
     if bowlers and not batting_players:
         st.markdown("---")
         st.subheader("🎯 ODI Bowling Analysis")
@@ -256,4 +263,4 @@ if fetch_data:
         st.info("Select bowler(s) in the Filters to view bowling analysis for that bowler(s).")
 
 else:
-    st.info("👈 Adjust filters and click *Fetch* to view results.")
+    st.info("👈 Adjust filters and click Fetch to view results.")
