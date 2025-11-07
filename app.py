@@ -122,13 +122,25 @@ if fetch_data:
             Control=("battingConnectionId", lambda x: x.fillna('None').isin(['Left', 'Middled', 'WellTimed', 'None']).sum())
         ).reset_index()
 
-        group = pd.merge(group, temp.groupby(group_by_col).agg(
-            Runs=("runsConceded", "sum"),
-            Extras=("extras", "sum"),
-            Dot=("runsConceded", lambda x: (x == 0).sum()),
-            Fours=("runsConceded", lambda x: (x == 4).sum()),
-            Sixes=("runsConceded", lambda x: (x == 6).sum())
-        ).reset_index(), on=group_by_col, how="left")
+        # ---------- Special Runs logic only for Batter tab ----------
+        if group_by_col == "battingPlayer":
+            runs_agg = temp.groupby(group_by_col).agg(
+                Runs=("runsScored", "sum"),
+                Extras=("extras", "sum"),
+                Dot=("runsScored", lambda x: (x == 0).sum()),
+                Fours=("runsScored", lambda x: (x == 4).sum()),
+                Sixes=("runsScored", lambda x: (x == 6).sum())
+            ).reset_index()
+        else:
+            runs_agg = temp.groupby(group_by_col).agg(
+                Runs=("runsConceded", "sum"),
+                Extras=("extras", "sum"),
+                Dot=("runsConceded", lambda x: (x == 0).sum()),
+                Fours=("runsConceded", lambda x: (x == 4).sum()),
+                Sixes=("runsConceded", lambda x: (x == 6).sum())
+            ).reset_index()
+
+        group = pd.merge(group, runs_agg, on=group_by_col, how="left")
 
         # Balls for economy and False Shot: only non-wide and non-no-ball
         balls_group = temp_non_wide.groupby(group_by_col).agg(Balls=("ballNumber", "count")).reset_index()
