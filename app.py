@@ -100,7 +100,7 @@ if fetch_data:
 
         return group
 
-    # ---------- Bowling helper (exclude isWide balls, add Dot and Dot%) ----------
+    # ---------- Bowling helper (exclude isWide balls, add Dot and Dot%, exclude RunOut/RunOutSub) ----------
     def make_bowling_group_table_with_total(df, group_by_col, display_name=None):
         if df.empty:
             return pd.DataFrame(columns=[display_name or group_by_col, "Runs", "Extras", "Balls", "Wickets", "Dot", "Dot %", "Average", "Economy"])
@@ -109,12 +109,16 @@ if fetch_data:
         # For balls count and economy, exclude wide balls
         temp_non_wide = temp[temp["isWide"] != True]
 
-        group = temp.groupby(group_by_col).agg(
+        # Wickets exclude RunOut and RunOutSub
+        def count_valid_wickets(x):
+            return ((x["isWicket"] == True) & (~x["dismissalTypeId"].isin(["RunOut", "RunOutSub"]))).sum()
+
+        group = temp.groupby(group_by_col).apply(count_valid_wickets).reset_index(name="Wickets")
+        group = pd.merge(group, temp.groupby(group_by_col).agg(
             Runs=("runsConceded", "sum"),
             Extras=("extras", "sum"),
-            Wickets=("isWicket", lambda x: (x == True).sum()),
             Dot=("runsConceded", lambda x: (x == 0).sum())
-        ).reset_index()
+        ).reset_index(), on=group_by_col, how="left")
 
         # Balls for economy: only non-wide balls
         balls_group = temp_non_wide.groupby(group_by_col).agg(Balls=("ballNumber", "count")).reset_index()
