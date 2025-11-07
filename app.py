@@ -3,7 +3,7 @@ import pandas as pd
 
 # Title
 st.title("ODI Batting Analysis")
-st.header("🎯 ODI Bowling Analysis")
+st.title("🎯 ODI Bowling Analysis")
 
 # Load the dataset (relative path for Streamlit Cloud)
 df = pd.read_csv("Latest ODI Matches Till 2025 Updated.csv")
