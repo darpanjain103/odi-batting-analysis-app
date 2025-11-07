@@ -209,8 +209,6 @@ if fetch_data:
             show_table(make_group_table(filtered_df, "bowlingHandId", display_name="Bowling Hand"), "bowling_hand")
         with tab10:
             show_table(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"), "shot_area")
-        with tab11:
-            st.markdown("[Strike Rate/Average]:")
             pass
     else:
         st.info("Select batting player(s) in the Filters to view batting analysis.")
