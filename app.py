@@ -206,7 +206,7 @@ if fetch_data:
         st.markdown("*[Strike Rate/Average]:*")
         show_table(make_length_line_table(filtered_df), "length_line")
 
-    # ------------------ NEW SECTION for Bowling Analysis ------------------
+ # ------------------ NEW SECTION for Bowling Analysis ------------------
 st.markdown("---")
 st.header("🎯 ODI Bowling Analysis")
 
