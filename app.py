@@ -118,7 +118,7 @@ if fetch_data:
             runs_agg = temp.groupby(group_by_col).agg(
                 Runs=("runsScored", "sum"),
                 Extras=("extras", "sum"),
-                Dot=("runsScored", lambda x: (x == 0).sum()),
+                Dot=("runsConceded", lambda x: (x == 0).sum()),
                 Fours=("runsScored", lambda x: (x == 4).sum()),
                 Sixes=("runsScored", lambda x: (x == 6).sum())
             ).reset_index()
@@ -159,7 +159,7 @@ if fetch_data:
             "Economy": [round((group["Runs"].sum() / group["Balls"].sum()) * 6, 2) if group["Balls"].sum() > 0 else "-"]
         })
         group = pd.concat([group, total_row], ignore_index=True)
-        group = group[[group_by_col, "Runs", "Extras", "Balls", "Wickets", "Dot", "Dot %", "Fours", "Sixes", "Boundaries", "Boundary %", "False Shot", "False Shot %", "Average", "Economy"]]
+        group = group[[group_by_col, "Runs", "Balls", "Wickets", "Average", "Economy", "Dot %", "Boundary %", "False Shot %"]]
         if display_name:
             group.rename(columns={group_by_col: display_name}, inplace=True)
         return group
@@ -209,48 +209,7 @@ if fetch_data:
             show_table(make_group_table(filtered_df, "bowlingHandId", display_name="Bowling Hand"), "bowling_hand")
         with tab10:
             show_table(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"), "shot_area")
-        with tab11:
-            st.markdown("[Strike Rate/Average]:")
-
-            # ---------- Length-Line helper ----------
-            def make_length_line_table(df):
-                temp_df = df[df["isWide"] != True]
-                group = temp_df.groupby(["lengthTypeId", "lineTypeId"]).agg(
-                    Total_Runs=("runsScored", "sum"),
-                    Balls_Faced=("runsScored", "count"),
-                    Outs=("isWicket", "sum")
-                ).reset_index()
-
-                group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
-                group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"],2) if x["Outs"]>0 else "-", axis=1)
-                group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
-                pivot_table = group.pivot(index="lengthTypeId", columns="lineTypeId", values="SR / Avg").fillna("-")
-                pivot_table.reset_index(inplace=True)
-                pivot_table.rename(columns={"lengthTypeId": "Length"}, inplace=True)
-
-                total_col = []
-                for length in pivot_table.index:
-                    temp = group[group["lengthTypeId"] == length]
-                    runs, balls, outs = temp["Total_Runs"].sum(), temp["Balls_Faced"].sum(), temp["Outs"].sum()
-                    sr = round(runs / balls * 100, 2) if balls > 0 else 0
-                    avg = round(runs / outs, 2) if outs > 0 else "-"
-                    total_col.append(f"{sr} / {avg}")
-                pivot_table["Total"] = total_col
-
-                total_row = []
-                for line in pivot_table.columns:
-                    temp = group[group["lineTypeId"] == line] if line != "Total" else group
-                    runs, balls, outs = temp["Total_Runs"].sum(), temp["Balls_Faced"].sum(), temp["Outs"].sum()
-                    sr = round(runs / balls * 100, 2) if balls > 0 else 0
-                    avg = round(runs / outs, 2) if outs > 0 else "-"
-                    total_row.append(f"{sr} / {avg}")
-                pivot_table.loc["Total"] = total_row
-                pivot_table.index.name = "Length"
-
-                return pivot_table
-
-            show_table(make_length_line_table(filtered_df), "length_line")
-
+            pass
     else:
         st.info("Select batting player(s) in the Filters to view batting analysis.")
 
