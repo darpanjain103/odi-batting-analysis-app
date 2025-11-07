@@ -188,7 +188,9 @@ if fetch_data:
     tab_b1, tab_b2, tab_b3 = bowling_tabs
 
     def make_bowling_group_table(df, group_by_col, display_name=None):
+        # only consider non-wide deliveries and ensure the row actually has a bowler
         temp_df = df[df["isWide"] != True]
+        temp_df = temp_df[temp_df["bowlerPlayer"].notna()]
 
         group = temp_df.groupby(group_by_col).agg(
             Runs=("runsConceded", "sum"),
