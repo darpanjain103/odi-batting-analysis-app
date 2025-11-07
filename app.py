@@ -24,6 +24,7 @@ fetch_data = st.sidebar.button("Fetch")
 
 # Apply filters only when Fetch is clicked
 if fetch_data:
+    # ---------- Batting filtered dataset (preserve original logic) ----------
     filtered_df = df.copy()
     if batting_players:
         filtered_df = filtered_df[filtered_df["battingPlayer"].isin(batting_players)]
@@ -36,6 +37,18 @@ if fetch_data:
     filtered_df = filtered_df[
         (filtered_df["overNumber"] >= over_range[0]) & (filtered_df["overNumber"] <= over_range[1])
     ]
+
+    # ---------- Bowling filtered dataset (ONLY depend on bowler selection + common filters like years & over_range) ----------
+    bowling_filtered_df = df.copy()
+    # Keep year and over filters for bowling as well
+    if years:
+        bowling_filtered_df = bowling_filtered_df[bowling_filtered_df["Year"].isin(years)]
+    bowling_filtered_df = bowling_filtered_df[
+        (bowling_filtered_df["overNumber"] >= over_range[0]) & (bowling_filtered_df["overNumber"] <= over_range[1])
+    ]
+    # IMPORTANT: only filter by bowler(s) for bowling analysis — do NOT apply batting_players filter here
+    if bowlers:
+        bowling_filtered_df = bowling_filtered_df[bowling_filtered_df["bowlerPlayer"].isin(bowlers)]
 
     # Function to group and summarize with extra metrics, Outs, Average, Control, and False Shot %
     def make_group_table(df, group_by_col, display_name=None):
@@ -120,6 +133,19 @@ if fetch_data:
 
         return pivot_table
 
+    # ---------- Bowling helpers ----------
+    def make_bowling_group_table(df, group_by_col, display_name=None):
+        # Only aggregate where bowlerPlayer exists (we rely on bowling_filtered_df being already filtered by bowler)
+        temp = df.copy()
+        # sum runsConceded and extras by the requested grouping column
+        group = temp.groupby(group_by_col).agg(
+            Runs=("runsConceded", "sum"),
+            Extras=("extras", "sum")
+        ).reset_index()
+        if display_name:
+            group.rename(columns={group_by_col: display_name}, inplace=True)
+        return group
+
     # ✅ FIXED: auto height adjustment per tab
     def show_table(df, key):
         df_display = df.copy()
@@ -138,7 +164,7 @@ if fetch_data:
 
         st.dataframe(df_display, use_container_width=True, height=dynamic_height)
 
-    # 🏏 Existing ODI Batting Analysis Tabs
+    # ---------- Batting tabs (unchanged) ----------
     tabs = st.tabs([
         "Foot Type", "Length", "Line", "Ball Type", "Bowling End", "Bowling Type",
         "Bowler", "Shot", "Bowling Hand", "Shot Area", "Length-Line"
@@ -180,36 +206,27 @@ if fetch_data:
         st.markdown("*[Strike Rate/Average]:*")
         show_table(make_length_line_table(filtered_df), "length_line")
 
-    # 🆕 NEW SECTION for Bowling Analysis
+    # ------------------ NEW SECTION for Bowling Analysis ------------------
     st.markdown("---")
     st.header("🎯 ODI Bowling Analysis")
 
-    bowling_tabs = st.tabs(["Foot Type", "Bowling End", "Ball Type"])
-    tab_b1, tab_b2, tab_b3 = bowling_tabs
+    if not bowlers:
+        st.info("Select bowler(s) in the Filters to view bowling analysis for that bowler(s).")
+    else:
+        # Bowling tabs as requested: Foot Type, Bowling End, Ball Type
+        bowling_tabs = st.tabs(["Foot Type", "Bowling End", "Ball Type"])
+        btab1, btab2, btab3 = bowling_tabs
 
-    def make_bowling_group_table(df, group_by_col, display_name=None):
-        # only consider non-wide deliveries and ensure the row actually has a bowler
-        temp_df = df[df["isWide"] != True]
-        temp_df = temp_df[temp_df["bowlerPlayer"].notna()]
+        with btab1:
+            # Group by battingFeetId but only using bowling_filtered_df (which is filtered by bowlerPlayer)
+            # This shows how many runs/extras conceded vs batter foot type for the selected bowler(s)
+            show_table(make_bowling_group_table(bowling_filtered_df[boll := 'battingFeetId'].pipe(lambda df: bowling_filtered_df), "battingFeetId", display_name="Foot Type"), "b_foot")
 
-        group = temp_df.groupby(group_by_col).agg(
-            Runs=("runsConceded", "sum"),
-            Extras=("extras", "sum")
-        ).reset_index()
+        with btab2:
+            show_table(make_bowling_group_table(bowling_filtered_df, "bowlingFromId", display_name="Bowling End"), "b_end")
 
-        if display_name:
-            group.rename(columns={group_by_col: display_name}, inplace=True)
-
-        return group
-
-    with tab_b1:
-        show_table(make_bowling_group_table(filtered_df, "battingFeetId", display_name="Foot Type"), "bowl_foot_type")
-
-    with tab_b2:
-        show_table(make_bowling_group_table(filtered_df, "bowlingFromId", display_name="Bowling End"), "bowl_bowling_end")
-
-    with tab_b3:
-        show_table(make_bowling_group_table(filtered_df, "bowlingDetailId", display_name="Ball Type"), "bowl_ball_type")
+        with btab3:
+            show_table(make_bowling_group_table(bowling_filtered_df, "bowlingDetailId", display_name="Ball Type"), "b_ball_type")
 
 else:
     st.info("👈 Adjust filters and click *Fetch* to view results.")
