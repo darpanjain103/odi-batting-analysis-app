@@ -138,6 +138,7 @@ if fetch_data:
 
         st.dataframe(df_display, use_container_width=True, height=dynamic_height)
 
+    # 🏏 Existing ODI Batting Analysis Tabs
     tabs = st.tabs([
         "Foot Type", "Length", "Line", "Ball Type", "Bowling End", "Bowling Type",
         "Bowler", "Shot", "Bowling Hand", "Shot Area", "Length-Line"
@@ -178,10 +179,8 @@ if fetch_data:
     with tab11:
         st.markdown("*[Strike Rate/Average]:*")
         show_table(make_length_line_table(filtered_df), "length_line")
-else:
-    st.info("👈 Adjust filters and click *Fetch* to view results.")
 
-        # 🆕 NEW SECTION for Bowling Analysis
+    # 🆕 NEW SECTION for Bowling Analysis
     st.markdown("---")
     st.header("🎯 ODI Bowling Analysis")
 
@@ -210,3 +209,5 @@ else:
     with tab_b3:
         show_table(make_bowling_group_table(filtered_df, "bowlingDetailId", display_name="Ball Type"), "bowl_ball_type")
 
+else:
+    st.info("👈 Adjust filters and click *Fetch* to view results.")
