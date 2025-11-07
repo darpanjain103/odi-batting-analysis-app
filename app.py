@@ -178,6 +178,8 @@ if fetch_data:
     with tab11:
         st.markdown("*[Strike Rate/Average]:*")
         show_table(make_length_line_table(filtered_df), "length_line")
+else:
+    st.info("👈 Adjust filters and click *Fetch* to view results.")
 
         # 🆕 NEW SECTION for Bowling Analysis
     st.markdown("---")
