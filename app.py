@@ -50,7 +50,7 @@ if fetch_data:
 
     # ---------- Batting helper ----------
     def make_group_table(df, group_by_col, display_name=None):
-        temp_df = df[df["isWide"] != True]
+        temp_df = df[(df["isWide"] != True) & (df["isNoBall"] != True)]
 
         group = temp_df.groupby(group_by_col).agg(
             Total_Runs=("runsScored", "sum"),
@@ -66,7 +66,8 @@ if fetch_data:
         group["Boundary %"] = round(((group["Fours"] + group["Sixes"]) / group["Balls_Faced"]) * 100, 2)
         group["Dot Ball %"] = round((group["Dot_Balls"] / group["Balls_Faced"]) * 100, 2)
         group["Control %"] = round((group["Control"] / group["Balls_Faced"]) * 100, 2)
-        group["False Shot %"] = round(((group["Balls_Faced"] - group["Control"]) / group["Balls_Faced"]) * 100, 2)
+        group["False Shot"] = group["Balls_Faced"] - group["Control"]
+        group["False Shot %"] = round((group["False Shot"] / group["Balls_Faced"]) * 100, 2)
         group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"], 2) if x["Outs"] > 0 else "-", axis=1)
         group = group.sort_values(by="Strike Rate", ascending=False).reset_index(drop=True)
 
@@ -83,7 +84,8 @@ if fetch_data:
             "Boundary %": [round((group["Fours"].sum() + group["Sixes"].sum()) / group["Balls_Faced"].sum() * 100, 2)],
             "Dot Ball %": [round(group["Dot_Balls"].sum() / group["Balls_Faced"].sum() * 100, 2)],
             "Control %": [round(group["Control"].sum() / group["Balls_Faced"].sum() * 100, 2)],
-            "False Shot %": [round(((group["Balls_Faced"].sum() - group["Control"].sum()) / group["Balls_Faced"].sum()) * 100, 2)],
+            "False Shot": [group["False Shot"].sum()],
+            "False Shot %": [round((group["False Shot"].sum() / group["Balls_Faced"].sum()) * 100, 2)],
             "Average": ["-" if group["Outs"].sum() == 0 else round(group["Total_Runs"].sum() / group["Outs"].sum(), 2)]
         })
 
@@ -93,10 +95,6 @@ if fetch_data:
             "Runs", "Balls", "Outs", "Average", "Strike Rate", "Fours", "Sixes", "Dot Balls",
             "Dot Ball %", "Boundary %", "Control", "Control %", "False Shot", "False Shot %"
         ]
-
-        # Add False Shot column
-        group["False Shot"] = group["Balls"] - group["Control"]
-
         group = group[[group_by_col] + metric_order]
 
         if display_name:
@@ -118,18 +116,24 @@ if fetch_data:
             return ((x["isWicket"] == True) & (~x["dismissalTypeId"].isin(["RunOut", "RunOutSub"]))).sum()
 
         group = temp.groupby(group_by_col).apply(count_valid_wickets).reset_index(name="Wickets")
+
+        # Control only on valid balls
+        control_group = temp_non_wide.groupby(group_by_col).agg(
+            Control=("battingConnectionId", lambda x: x.fillna('None').isin(['Left', 'Middled', 'WellTimed', 'None']).sum())
+        ).reset_index()
+
         group = pd.merge(group, temp.groupby(group_by_col).agg(
             Runs=("runsConceded", "sum"),
             Extras=("extras", "sum"),
             Dot=("runsConceded", lambda x: (x == 0).sum()),
             Fours=("runsConceded", lambda x: (x == 4).sum()),
-            Sixes=("runsConceded", lambda x: (x == 6).sum()),
-            Control=("battingConnectionId", lambda x: x.fillna('None').isin(['Left', 'Middled', 'WellTimed', 'None']).sum())
+            Sixes=("runsConceded", lambda x: (x == 6).sum())
         ).reset_index(), on=group_by_col, how="left")
 
         # Balls for economy and False Shot: only non-wide and non-no-ball
         balls_group = temp_non_wide.groupby(group_by_col).agg(Balls=("ballNumber", "count")).reset_index()
         group = pd.merge(group, balls_group, on=group_by_col, how="left")
+        group = pd.merge(group, control_group, on=group_by_col, how="left")
 
         # Boundaries and Boundary %
         group["Boundaries"] = group["Fours"] + group["Sixes"]
@@ -137,7 +141,7 @@ if fetch_data:
 
         # False Shot and False Shot %
         group["False Shot"] = group["Balls"] - group["Control"]
-        group["False Shot %"] = round(((group["Balls"] - group["Control"]) / group["Balls"]) * 100, 2)
+        group["False Shot %"] = round((group["False Shot"] / group["Balls"]) * 100, 2)
 
         # Dot % and Economy
         group["Dot %"] = round((group["Dot"] / group["Balls"]) * 100, 2)
@@ -158,7 +162,7 @@ if fetch_data:
             "Boundaries": [group["Boundaries"].sum()],
             "Boundary %": [round((group["Boundaries"].sum() / group["Balls"].sum()) * 100, 2) if group["Balls"].sum() > 0 else 0],
             "False Shot": [group["False Shot"].sum()],
-            "False Shot %": [round(((group["Balls"].sum() - group["Control"].sum()) / group["Balls"].sum()) * 100, 2)],
+            "False Shot %": [round((group["False Shot"].sum() / group["Balls"].sum()) * 100, 2)],
             "Average": ["-" if group["Wickets"].sum() == 0 else round(group["Runs"].sum() / group["Wickets"].sum(), 2)],
             "Economy": [round((group["Runs"].sum() / group["Balls"].sum()) * 6, 2) if group["Balls"].sum() > 0 else "-"]
         })
