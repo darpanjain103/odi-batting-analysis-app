@@ -225,6 +225,8 @@ if fetch_data:
                 group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"],2) if x["Outs"]>0 else "-", axis=1)
                 group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
                 pivot_table = group.pivot(index="lengthTypeId", columns="lineTypeId", values="SR / Avg").fillna("-")
+                pivot_table.reset_index(inplace=True)
+                pivot_table.rename(columns={"lengthTypeId": "Length"}, inplace=True)
 
                 total_col = []
                 for length in pivot_table.index:
