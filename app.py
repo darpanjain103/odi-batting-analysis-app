@@ -100,10 +100,10 @@ if fetch_data:
 
         return group
 
-    # ---------- Bowling helper (exclude isWide balls in Economy/Balls) ----------
+    # ---------- Bowling helper (exclude isWide balls, add Dot and Dot%) ----------
     def make_bowling_group_table_with_total(df, group_by_col, display_name=None):
         if df.empty:
-            return pd.DataFrame(columns=[display_name or group_by_col, "Runs", "Extras", "Wickets", "Average", "Economy"])
+            return pd.DataFrame(columns=[display_name or group_by_col, "Runs", "Extras", "Balls", "Wickets", "Dot", "Dot %", "Average", "Economy"])
         temp = df.copy()
 
         # For balls count and economy, exclude wide balls
@@ -113,11 +113,15 @@ if fetch_data:
             Runs=("runsConceded", "sum"),
             Extras=("extras", "sum"),
             Wickets=("isWicket", lambda x: (x == True).sum()),
+            Dot=("runsConceded", lambda x: (x == 0).sum())
         ).reset_index()
 
         # Balls for economy: only non-wide balls
         balls_group = temp_non_wide.groupby(group_by_col).agg(Balls=("ballNumber", "count")).reset_index()
         group = pd.merge(group, balls_group, on=group_by_col, how="left")
+
+        # Calculate Dot %
+        group["Dot %"] = round((group["Dot"] / group["Balls"]) * 100, 2)
 
         # Calculate Average and Economy
         group["Average"] = group.apply(lambda x: round(x["Runs"]/x["Wickets"], 2) if x["Wickets"] > 0 else "-", axis=1)
@@ -128,15 +132,17 @@ if fetch_data:
             group_by_col: ["Total"],
             "Runs": [group["Runs"].sum()],
             "Extras": [group["Extras"].sum()],
-            "Wickets": [group["Wickets"].sum()],
             "Balls": [group["Balls"].sum()],
+            "Wickets": [group["Wickets"].sum()],
+            "Dot": [group["Dot"].sum()],
+            "Dot %": [round((group["Dot"].sum() / group["Balls"].sum()) * 100, 2) if group["Balls"].sum() > 0 else 0],
             "Average": ["-" if group["Wickets"].sum() == 0 else round(group["Runs"].sum() / group["Wickets"].sum(), 2)],
             "Economy": [round((group["Runs"].sum() / group["Balls"].sum()) * 6, 2) if group["Balls"].sum() > 0 else "-"]
         })
         group = pd.concat([group, total_row], ignore_index=True)
 
         # Reorder columns for better readability
-        group = group[[group_by_col, "Runs", "Extras", "Balls", "Wickets", "Average", "Economy"]]
+        group = group[[group_by_col, "Runs", "Extras", "Balls", "Wickets", "Dot", "Dot %", "Average", "Economy"]]
 
         if display_name:
             group.rename(columns={group_by_col: display_name}, inplace=True)
