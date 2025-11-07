@@ -156,17 +156,22 @@ def make_length_line_table(df):
 
     return pivot_table
 
-# Helper function for displaying with sticky first column
+# Helper function for displaying with sticky first column using st.dataframe + index
 def show_table(df, key):
-    st.data_editor(
-        df,
-        use_container_width=True,
-        hide_index=True,
-        disabled=True,
-        height=500,
-        key=key,
-        **{"sticky_columns": 1}
-    )
+    # Make a copy so we don't mutate original
+    df_display = df.copy()
+    # Set the first column as index so Streamlit will freeze it when horizontally scrolling
+    if df_display.shape[1] > 0:
+        first_col = df_display.columns[0]
+        # If the total row label ("Total") exists in the first column, ensure dtype supports it
+        try:
+            df_display = df_display.set_index(first_col)
+        except Exception:
+            # Fallback: convert first column to string then set as index
+            df_display[first_col] = df_display[first_col].astype(str)
+            df_display = df_display.set_index(first_col)
+    # Show using st.dataframe (index column will stay fixed on horizontal scroll)
+    st.dataframe(df_display, use_container_width=True, height=500)
 
 # Display Tables in Tabs with custom names
 tabs = st.tabs([
