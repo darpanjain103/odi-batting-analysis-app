@@ -118,7 +118,7 @@ if fetch_data:
             runs_agg = temp.groupby(group_by_col).agg(
                 Runs=("runsScored", "sum"),
                 Extras=("extras", "sum"),
-                Dot=("runsScored", lambda x: (x == 0).sum()),
+                Dot=("runsConceded", lambda x: (x == 0).sum()),
                 Fours=("runsScored", lambda x: (x == 4).sum()),
                 Sixes=("runsScored", lambda x: (x == 6).sum())
             ).reset_index()
