@@ -207,26 +207,52 @@ if fetch_data:
         show_table(make_length_line_table(filtered_df), "length_line")
 
     # ------------------ NEW SECTION for Bowling Analysis ------------------
-    st.markdown("---")
-    st.header("🎯 ODI Bowling Analysis")
+st.markdown("---")
+st.header("🎯 ODI Bowling Analysis")
 
-    if not bowlers:
-        st.info("Select bowler(s) in the Filters to view bowling analysis for that bowler(s).")
-    else:
-        # Bowling tabs as requested: Foot Type, Bowling End, Ball Type
-        bowling_tabs = st.tabs(["Foot Type", "Bowling End", "Ball Type"])
-        btab1, btab2, btab3 = bowling_tabs
+if not bowlers:
+    st.info("Select bowler(s) in the Filters to view bowling analysis for that bowler(s).")
+else:
+    # Bowling tabs as requested: Foot Type, Bowling End, Ball Type
+    bowling_tabs = st.tabs(["Foot Type", "Bowling End", "Ball Type"])
+    btab1, btab2, btab3 = bowling_tabs
 
-        with btab1:
-            # Group by battingFeetId but only using bowling_filtered_df (which is filtered by bowlerPlayer)
-            # This shows how many runs/extras conceded vs batter foot type for the selected bowler(s)
-            show_table(make_bowling_group_table(bowling_filtered_df[boll := 'battingFeetId'].pipe(lambda df: bowling_filtered_df), "battingFeetId", display_name="Foot Type"), "b_foot")
+    def make_bowling_group_table_with_total(df, group_by_col, display_name=None):
+        temp = df.copy()
+        group = temp.groupby(group_by_col).agg(
+            Runs=("runsConceded", "sum"),
+            Extras=("extras", "sum")
+        ).reset_index()
 
-        with btab2:
-            show_table(make_bowling_group_table(bowling_filtered_df, "bowlingFromId", display_name="Bowling End"), "b_end")
+        # ✅ Add Total row
+        total_row = pd.DataFrame({
+            group_by_col: ["Total"],
+            "Runs": [group["Runs"].sum()],
+            "Extras": [group["Extras"].sum()]
+        })
+        group = pd.concat([group, total_row], ignore_index=True)
 
-        with btab3:
-            show_table(make_bowling_group_table(bowling_filtered_df, "bowlingDetailId", display_name="Ball Type"), "b_ball_type")
+        if display_name:
+            group.rename(columns={group_by_col: display_name}, inplace=True)
 
+        return group
+
+    with btab1:
+        show_table(
+            make_bowling_group_table_with_total(bowling_filtered_df, "battingFeetId", display_name="Foot Type"),
+            "b_foot"
+        )
+
+    with btab2:
+        show_table(
+            make_bowling_group_table_with_total(bowling_filtered_df, "bowlingFromId", display_name="Bowling End"),
+            "b_end"
+        )
+
+    with btab3:
+        show_table(
+            make_bowling_group_table_with_total(bowling_filtered_df, "bowlingDetailId", display_name="Ball Type"),
+            "b_ball_type"
+        )
 else:
     st.info("👈 Adjust filters and click *Fetch* to view results.")
