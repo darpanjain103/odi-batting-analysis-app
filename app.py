@@ -22,6 +22,50 @@ years = st.sidebar.multiselect("Select Year(s)", sorted(df["Year"].dropna().uniq
 # ✅ Add Fetch button
 fetch_data = st.sidebar.button("Fetch")
 
+# ---------- Length-Line helper ----------
+def make_length_line_table(df):
+    temp_df = df[(df["isWide"] != True) & (df["isNoBall"] != True)]
+
+    # Group by Length and Line
+    group = temp_df.groupby(["lengthTypeId", "lineTypeId"]).agg(
+        Total_Runs=("runsScored", "sum"),
+        Balls_Faced=("runsScored", "count"),
+        Outs=("isWicket", "sum")
+    ).reset_index()
+
+    # Calculate Strike Rate and Average
+    group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
+    group["Average"] = group.apply(lambda x: round(x["Total_Runs"] / x["Outs"], 2) if x["Outs"] > 0 else "-", axis=1)
+
+    # Combine SR and Avg for display
+    group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
+
+    # Pivot table: Length vs Line
+    pivot_table = group.pivot(index="lengthTypeId", columns="lineTypeId", values="SR / Avg").fillna("-")
+
+    # Add total per Length
+    total_col = []
+    for length in pivot_table.index:
+        temp = group[group["lengthTypeId"] == length]
+        runs, balls, outs = temp["Total_Runs"].sum(), temp["Balls_Faced"].sum(), temp["Outs"].sum()
+        sr = round(runs / balls * 100, 2) if balls > 0 else 0
+        avg = round(runs / outs, 2) if outs > 0 else "-"
+        total_col.append(f"{sr} / {avg}")
+    pivot_table["Total"] = total_col
+
+    # Add total row per Line
+    total_row = []
+    for line in pivot_table.columns:
+        temp = group[group["lineTypeId"] == line] if line != "Total" else group
+        runs, balls, outs = temp["Total_Runs"].sum(), temp["Balls_Faced"].sum(), temp["Outs"].sum()
+        sr = round(runs / balls * 100, 2) if balls > 0 else 0
+        avg = round(runs / outs, 2) if outs > 0 else "-"
+        total_row.append(f"{sr} / {avg}")
+    pivot_table.loc["Total"] = total_row
+
+    pivot_table.index.name = "Length"
+    return pivot_table
+
 # Apply filters only when Fetch is clicked
 if fetch_data:
     # ---------- Batting filtered dataset ----------
@@ -211,8 +255,7 @@ if fetch_data:
             show_table(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"), "shot_area")
         with tab11:
             st.markdown("[Strike Rate/Average]:")
-            st.dataframe(make_length_line_table(filtered_df))
-            pass
+            show_table(make_length_line_table(filtered_df), "length_line")
     else:
         st.info("Select batting player(s) in the Filters to view batting analysis.")
 
