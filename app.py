@@ -138,16 +138,12 @@ if fetch_data:
 
         st.dataframe(df_display, use_container_width=True, height=dynamic_height)
 
-    # 🟩 Added new "Bowling" tab at the end
     tabs = st.tabs([
         "Foot Type", "Length", "Line", "Ball Type", "Bowling End", "Bowling Type",
-        "Bowler", "Shot", "Bowling Hand", "Shot Area", "Length-Line", "Bowling"
+        "Bowler", "Shot", "Bowling Hand", "Shot Area", "Length-Line"
     ])
 
-    (
-        tab1, tab2, tab3, tab4, tab5, tab6,
-        tab7, tab8, tab9, tab10, tab11, tab12
-    ) = tabs
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11 = tabs
 
     with tab1:
         show_table(make_group_table(filtered_df, "battingFeetId", display_name="Foot Type"), "foot_type")
@@ -180,12 +176,8 @@ if fetch_data:
         show_table(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"), "shot_area")
 
     with tab11:
-        st.markdown("**[Strike Rate/Average]:**")
+        st.markdown("*[Strike Rate/Average]:*")
         show_table(make_length_line_table(filtered_df), "length_line")
 
-    # 🟢 Empty Bowling tab for now
-    with tab12:
-        st.markdown("### Bowling Analysis (Coming Soon)")
-
 else:
-    st.info("👈 Adjust filters and click **Fetch** to view results.")
+    st.info("👈 Adjust filters and click *Fetch* to view results.")
