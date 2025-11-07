@@ -1,23 +1,4 @@
-[8:03 pm, 7/11/2025] Darpan Jain: import streamlit as st
-import pandas as pd
-
-# Title
-st.title("ODI Batting Analysis")
-
-# Load the dataset (relative path for Streamlit Cloud)
-df = pd.read_csv("Latest ODI Matches Till 2025 Updated.csv")
-
-# Convert ballDateTime to datetime (to extract year easily)
-df["ballDateTime"] = pd.to_datetime(df["ballDateTime"], errors="coerce", dayfirst=True)
-df["Year"] = df["ballDateTime"].dt.year.astype("Int64")
-
-# Sidebar filters
-st.sidebar.header("Filters")
-batting_players = st.sidebar.multiselect("Select Batting Player(s)", df["battingPlayer"].dropna().unique())
-bowling_types = st.sidebar.multiselect("Select Bowling Type(s)", df["bowlingTypeId"].dropna().unique())
-bowlers = st.sidebar.multiselect("Select Bowler(s)", df["bowlerPlayer"].dropna().unique())
-over_range…
-[8:12 pm, 7/11/2025] Darpan Jain: import streamlit as st
+import streamlit as st
 import pandas as pd
 
 # Title
