@@ -91,8 +91,12 @@ if fetch_data:
         group.rename(columns={"Total_Runs": "Runs", "Balls_Faced": "Balls", "Dot_Balls": "Dot Balls"}, inplace=True)
         metric_order = [
             "Runs", "Balls", "Outs", "Average", "Strike Rate", "Fours", "Sixes", "Dot Balls",
-            "Dot Ball %", "Boundary %", "Control", "Control %", "False Shot %"
+            "Dot Ball %", "Boundary %", "Control", "Control %", "False Shot", "False Shot %"
         ]
+
+        # Add False Shot column
+        group["False Shot"] = group["Balls"] - group["Control"]
+
         group = group[[group_by_col] + metric_order]
 
         if display_name:
@@ -100,10 +104,10 @@ if fetch_data:
 
         return group
 
-    # ---------- Bowling helper with False Shot % and updated Balls ----------
+    # ---------- Bowling helper with False Shot % and False Shot count ----------
     def make_bowling_group_table_with_total(df, group_by_col, display_name=None):
         if df.empty:
-            return pd.DataFrame(columns=[display_name or group_by_col, "Runs", "Extras", "Balls", "Wickets", "Dot", "Dot %", "Fours", "Sixes", "Boundaries", "Boundary %", "False Shot %", "Average", "Economy"])
+            return pd.DataFrame(columns=[display_name or group_by_col, "Runs", "Extras", "Balls", "Wickets", "Dot", "Dot %", "Fours", "Sixes", "Boundaries", "Boundary %", "False Shot", "False Shot %", "Average", "Economy"])
         temp = df.copy()
 
         # For balls count and economy, exclude wide balls and no-balls
@@ -131,7 +135,8 @@ if fetch_data:
         group["Boundaries"] = group["Fours"] + group["Sixes"]
         group["Boundary %"] = round((group["Boundaries"] / group["Balls"]) * 100, 2)
 
-        # False Shot %
+        # False Shot and False Shot %
+        group["False Shot"] = group["Balls"] - group["Control"]
         group["False Shot %"] = round(((group["Balls"] - group["Control"]) / group["Balls"]) * 100, 2)
 
         # Dot % and Economy
@@ -152,6 +157,7 @@ if fetch_data:
             "Sixes": [group["Sixes"].sum()],
             "Boundaries": [group["Boundaries"].sum()],
             "Boundary %": [round((group["Boundaries"].sum() / group["Balls"].sum()) * 100, 2) if group["Balls"].sum() > 0 else 0],
+            "False Shot": [group["False Shot"].sum()],
             "False Shot %": [round(((group["Balls"].sum() - group["Control"].sum()) / group["Balls"].sum()) * 100, 2)],
             "Average": ["-" if group["Wickets"].sum() == 0 else round(group["Runs"].sum() / group["Wickets"].sum(), 2)],
             "Economy": [round((group["Runs"].sum() / group["Balls"].sum()) * 6, 2) if group["Balls"].sum() > 0 else "-"]
@@ -159,7 +165,7 @@ if fetch_data:
         group = pd.concat([group, total_row], ignore_index=True)
 
         # Reorder columns for readability
-        group = group[[group_by_col, "Runs", "Extras", "Balls", "Wickets", "Dot", "Dot %", "Fours", "Sixes", "Boundaries", "Boundary %", "False Shot %", "Average", "Economy"]]
+        group = group[[group_by_col, "Runs", "Extras", "Balls", "Wickets", "Dot", "Dot %", "Fours", "Sixes", "Boundaries", "Boundary %", "False Shot", "False Shot %", "Average", "Economy"]]
 
         if display_name:
             group.rename(columns={group_by_col: display_name}, inplace=True)
