@@ -185,9 +185,9 @@ if fetch_data:
     if batting_players:
         tabs = st.tabs([
             "Foot Type", "Length", "Line", "Ball Type", "Bowling End", "Bowling Type",
-            "Bowler", "Shot", "Bowling Hand", "Shot Area", "Length-Line"
+            "Bowler", "Shot", "Bowling Hand", "Shot Area"
         ])
-        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11 = tabs
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = tabs
 
         with tab1:
             show_table(make_group_table(filtered_df, "battingFeetId", display_name="Foot Type"), "foot_type")
