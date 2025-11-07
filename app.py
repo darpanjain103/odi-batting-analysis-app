@@ -136,7 +136,7 @@ if fetch_data:
         group = pd.concat([group, total_row], ignore_index=True)
 
         # Reorder columns for better readability
-        group = group[[group_by_col, "Runs", "Extras", "Wickets", "Average", "Economy"]]
+        group = group[[group_by_col, "Runs", "Extras", "Balls", "Wickets", "Average", "Economy"]]
 
         if display_name:
             group.rename(columns={group_by_col: display_name}, inplace=True)
