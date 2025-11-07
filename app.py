@@ -156,6 +156,18 @@ def make_length_line_table(df):
 
     return pivot_table
 
+# Helper function for displaying with sticky first column
+def show_table(df, key):
+    st.data_editor(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        disabled=True,
+        height=500,
+        key=key,
+        **{"sticky_columns": 1}
+    )
+
 # Display Tables in Tabs with custom names
 tabs = st.tabs([
     "Foot Type",
@@ -174,35 +186,35 @@ tabs = st.tabs([
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11 = tabs
 
 with tab1:
-    st.dataframe(make_group_table(filtered_df, "battingFeetId", display_name="Foot Type"))
+    show_table(make_group_table(filtered_df, "battingFeetId", display_name="Foot Type"), "foot_type")
 
 with tab2:
-    st.dataframe(make_group_table(filtered_df, "lengthTypeId", display_name="Length"))
+    show_table(make_group_table(filtered_df, "lengthTypeId", display_name="Length"), "length")
 
 with tab3:
-    st.dataframe(make_group_table(filtered_df, "lineTypeId", display_name="Line"))
+    show_table(make_group_table(filtered_df, "lineTypeId", display_name="Line"), "line")
 
 with tab4:
-    st.dataframe(make_group_table(filtered_df, "bowlingDetailId", display_name="Ball Type"))
+    show_table(make_group_table(filtered_df, "bowlingDetailId", display_name="Ball Type"), "ball_type")
 
 with tab5:
-    st.dataframe(make_group_table(filtered_df, "bowlingFromId", display_name="Bowling End"))
+    show_table(make_group_table(filtered_df, "bowlingFromId", display_name="Bowling End"), "bowling_end")
 
 with tab6:
-    st.dataframe(make_group_table(filtered_df, "bowlingTypeId", display_name="Bowling Type"))
+    show_table(make_group_table(filtered_df, "bowlingTypeId", display_name="Bowling Type"), "bowling_type")
 
 with tab7:
-    st.dataframe(make_group_table(filtered_df, "bowlerPlayer", display_name="Bowler"))
+    show_table(make_group_table(filtered_df, "bowlerPlayer", display_name="Bowler"), "bowler")
 
 with tab8:
-    st.dataframe(make_group_table(filtered_df, "battingShotTypeId", display_name="Shot"))
+    show_table(make_group_table(filtered_df, "battingShotTypeId", display_name="Shot"), "shot")
 
 with tab9:
-    st.dataframe(make_group_table(filtered_df, "bowlingHandId", display_name="Bowling Hand"))
+    show_table(make_group_table(filtered_df, "bowlingHandId", display_name="Bowling Hand"), "bowling_hand")
 
 with tab10:
-    st.dataframe(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"))
+    show_table(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"), "shot_area")
 
 with tab11:
     st.markdown("**[Strike Rate/Average]:**")
-    st.dataframe(make_length_line_table(filtered_df))
+    show_table(make_length_line_table(filtered_df), "length_line")
