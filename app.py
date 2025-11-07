@@ -242,8 +242,10 @@ if fetch_data:
         st.markdown("---")
         st.header("🎯 ODI Bowling Analysis")
 
-        bowling_tabs = st.tabs(["Foot Type", "Bowling End", "Ball Type"])
-        btab1, btab2, btab3 = bowling_tabs
+        bowling_tabs = st.tabs([
+            "Foot Type", "Bowling End", "Ball Type", "Shot", "Length", "Line", "Batter"
+        ])
+        btab1, btab2, btab3, btab4, btab5, btab6, btab7 = bowling_tabs
 
         with btab1:
             show_table(
@@ -262,6 +264,31 @@ if fetch_data:
                 make_bowling_group_table_with_total(bowling_filtered_df, "bowlingDetailId", display_name="Ball Type"),
                 "b_ball_type"
             )
+
+        with btab4:
+            show_table(
+                make_bowling_group_table_with_total(bowling_filtered_df, "battingShotTypeId", display_name="Shot"),
+                "b_shot"
+            )
+
+        with btab5:
+            show_table(
+                make_bowling_group_table_with_total(bowling_filtered_df, "lengthTypeId", display_name="Length"),
+                "b_length"
+            )
+
+        with btab6:
+            show_table(
+                make_bowling_group_table_with_total(bowling_filtered_df, "lineTypeId", display_name="Line"),
+                "b_line"
+            )
+
+        with btab7:
+            show_table(
+                make_bowling_group_table_with_total(bowling_filtered_df, "battingPlayer", display_name="Batter"),
+                "b_batter"
+            )
+
     else:
         st.info("Select bowler(s) in the Filters to view bowling analysis for that bowler(s).")
 
