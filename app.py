@@ -100,22 +100,28 @@ if fetch_data:
 
         return group
 
-    # ---------- Bowling helper (UPDATED with isWicket logic) ----------
+    # ---------- Bowling helper (exclude isWide balls in Economy/Balls) ----------
     def make_bowling_group_table_with_total(df, group_by_col, display_name=None):
         if df.empty:
             return pd.DataFrame(columns=[display_name or group_by_col, "Runs", "Extras", "Wickets", "Average", "Economy"])
         temp = df.copy()
+
+        # For balls count and economy, exclude wide balls
+        temp_non_wide = temp[temp["isWide"] != True]
+
         group = temp.groupby(group_by_col).agg(
             Runs=("runsConceded", "sum"),
             Extras=("extras", "sum"),
-            # ✅ handle True/False correctly
             Wickets=("isWicket", lambda x: (x == True).sum()),
-            Balls=("ballNumber", "count")
         ).reset_index()
+
+        # Balls for economy: only non-wide balls
+        balls_group = temp_non_wide.groupby(group_by_col).agg(Balls=("ballNumber", "count")).reset_index()
+        group = pd.merge(group, balls_group, on=group_by_col, how="left")
 
         # Calculate Average and Economy
         group["Average"] = group.apply(lambda x: round(x["Runs"]/x["Wickets"], 2) if x["Wickets"] > 0 else "-", axis=1)
-        group["Economy"] = round((group["Runs"] / group["Balls"]) * 6, 2)
+        group["Economy"] = group.apply(lambda x: round((x["Runs"] / x["Balls"]) * 6, 2) if x["Balls"] > 0 else "-", axis=1)
 
         # ✅ Safe Total row handling
         total_row = pd.DataFrame({
