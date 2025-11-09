@@ -180,7 +180,7 @@ if fetch_data:
         dynamic_height = int(header_height + (num_rows * row_height))
         st.dataframe(df_display, use_container_width=True, height=dynamic_height)
 
-    # ---------- Batting Section ----------
+# ---------- Batting Section ----------
 st.subheader("🏏 ODI Batting Analysis")
 if batting_players:
     tabs = st.tabs([
@@ -211,7 +211,7 @@ if batting_players:
         show_table(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"), "shot_area")
     with tab11:
         st.markdown("[Strike Rate / Average]:")
-        # ✅ Corrected Length-Line Table from your updated code
+        # ✅ Corrected Length-Line Table
         def make_length_line_table(df):
             temp_df = df[df["isWide"] != True]
 
@@ -272,6 +272,7 @@ if batting_players:
         length_line_df = make_length_line_table(filtered_df)
         length_line_df.reset_index(inplace=True)
         show_table(length_line_df, "length_line")
+
 
 else:
     st.info("Select batting player(s) in the Filters to view batting analysis.")
