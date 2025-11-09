@@ -103,7 +103,7 @@ if fetch_data:
         return group
 
 
-    # ---------- Length-Line Combined Table ----------
+        # ---------- Length-Line Combined Table ----------
     def make_length_line_table(df):
         temp_df = df[df["isWide"] != True]
 
@@ -114,17 +114,20 @@ if fetch_data:
         ).reset_index()
 
         group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
-        group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"],2) if x["Outs"]>0 else "-", axis=1)
+        group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"], 2) if x["Outs"] > 0 else "-", axis=1)
         group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
 
+        # ✅ Proper indentation here
         if "lengthTypeName" in df.columns:
-        group["lengthTypeId"] = group["lengthTypeId"].map(
-            df.set_index("lengthTypeId")["lengthTypeName"].to_dict()
-        ).fillna(group["lengthTypeId"])
+            group["lengthTypeId"] = group["lengthTypeId"].map(
+                df.set_index("lengthTypeId")["lengthTypeName"].to_dict()
+            ).fillna(group["lengthTypeId"])
+
         if "lineTypeName" in df.columns:
-        group["lineTypeId"] = group["lineTypeId"].map(
-            df.set_index("lineTypeId")["lineTypeName"].to_dict()
-        ).fillna(group["lineTypeId"])
+            group["lineTypeId"] = group["lineTypeId"].map(
+                df.set_index("lineTypeId")["lineTypeName"].to_dict()
+            ).fillna(group["lineTypeId"])
+
         pivot_table = group.pivot(index="lengthTypeId", columns="lineTypeId", values="SR / Avg").fillna("-")
 
         # Add total column (for each length)
@@ -161,7 +164,6 @@ if fetch_data:
 
         pivot_table.index.name = "Length"
         return pivot_table
-
 
     # ---------- Display helper ----------
     def show_table(df, key):
