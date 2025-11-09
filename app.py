@@ -22,17 +22,8 @@ years = st.sidebar.multiselect("Select Year(s)", sorted(df["Year"].dropna().uniq
 # ✅ Add Fetch button
 fetch_data = st.sidebar.button("Fetch")
 
+# Apply filters only when Fetch is clicked
 if fetch_data:
-    # show active filters for quick debugging
-    st.markdown("**Active filters:**")
-    st.write({
-        "batting_players_count": len(batting_players),
-        "bowlers_count": len(bowlers),
-        "bowling_types_count": len(bowling_types),
-        "over_range": over_range,
-        "years_count": len(years)
-    })
-
     # ---------- Batting filtered dataset ----------
     filtered_df = df.copy()
     if batting_players:
@@ -40,7 +31,6 @@ if fetch_data:
     if bowling_types:
         filtered_df = filtered_df[filtered_df["bowlingTypeId"].isin(bowling_types)]
     if bowlers:
-        # keep this so selecting a bowler still filters batting view where bowler faced that batter
         filtered_df = filtered_df[filtered_df["bowlerPlayer"].isin(bowlers)]
     if years:
         filtered_df = filtered_df[filtered_df["Year"].isin(years)]
@@ -55,12 +45,8 @@ if fetch_data:
     bowling_filtered_df = bowling_filtered_df[
         (bowling_filtered_df["overNumber"] >= over_range[0]) & (bowling_filtered_df["overNumber"] <= over_range[1])
     ]
-    # IMPORTANT: if the user selected bowlers, filter bowling dataset by them
     if bowlers:
         bowling_filtered_df = bowling_filtered_df[bowling_filtered_df["bowlerPlayer"].isin(bowlers)]
-    # also apply bowling types if selected (useful for bowling analysis)
-    if bowling_types:
-        bowling_filtered_df = bowling_filtered_df[bowling_filtered_df["bowlingTypeId"].isin(bowling_types)]
 
     # ---------- Batting helper ----------
     def make_group_table(df, group_by_col, display_name=None):
@@ -178,64 +164,6 @@ if fetch_data:
             group.rename(columns={group_by_col: display_name}, inplace=True)
         return group
 
-    # ---------- ✅ Corrected Length-Line Table (lengths now show on Y-axis properly) ----------
-    def make_length_line_table(df):
-        temp_df = df[df["isWide"] != True]
-
-        group = temp_df.groupby(["lengthTypeId", "lineTypeId"]).agg(
-            Total_Runs=("runsScored", "sum"),
-            Balls_Faced=("runsScored", "count"),
-            Outs=("isWicket", "sum")
-        ).reset_index()
-
-        group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
-        group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"], 2) if x["Outs"] > 0 else "-", axis=1)
-        group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
-
-        if "lengthTypeName" in df.columns:
-            length_map = df.drop_duplicates("lengthTypeId").set_index("lengthTypeId")["lengthTypeName"].to_dict()
-            group["lengthName"] = group["lengthTypeId"].map(length_map).fillna(group["lengthTypeId"])
-        else:
-            group["lengthName"] = group["lengthTypeId"]
-
-        if "lineTypeName" in df.columns:
-            line_map = df.drop_duplicates("lineTypeId").set_index("lineTypeId")["lineTypeName"].to_dict()
-            group["lineName"] = group["lineTypeId"].map(line_map).fillna(group["lineTypeId"])
-        else:
-            group["lineName"] = group["lineTypeId"]
-
-        pivot_table = group.pivot(index="lengthName", columns="lineName", values="SR / Avg").fillna("-")
-
-        total_col = []
-        for length in pivot_table.index:
-            temp = group[group["lengthName"] == length]
-            runs = temp["Total_Runs"].sum()
-            balls = temp["Balls_Faced"].sum()
-            outs = temp["Outs"].sum()
-            sr = round(runs / balls * 100, 2) if balls > 0 else 0
-            avg = round(runs / outs, 2) if outs > 0 else "-"
-            total_col.append(f"{sr} / {avg}")
-        pivot_table["Total"] = total_col
-
-        total_row = []
-        for line in pivot_table.columns:
-            if line == "Total":
-                runs = group["Total_Runs"].sum()
-                balls = group["Balls_Faced"].sum()
-                outs = group["Outs"].sum()
-            else:
-                temp = group[group["lineName"] == line]
-                runs = temp["Total_Runs"].sum()
-                balls = temp["Balls_Faced"].sum()
-                outs = temp["Outs"].sum()
-            sr = round(runs / balls * 100, 2) if balls > 0 else 0
-            avg = round(runs / outs, 2) if outs > 0 else "-"
-            total_row.append(f"{sr} / {avg}")
-        pivot_table.loc["Total"] = total_row
-
-        pivot_table.index.name = "Length"
-        return pivot_table
-
     # ---------- Display helper ----------
     def show_table(df, key):
         df_display = df.copy()
@@ -257,9 +185,9 @@ if fetch_data:
     if batting_players:
         tabs = st.tabs([
             "Foot Type", "Length", "Line", "Ball Type", "Bowling End", "Bowling Type",
-            "Bowler", "Shot", "Bowling Hand", "Shot Area", "Length-Line"
+            "Bowler", "Shot", "Bowling Hand", "Shot Area"
         ])
-        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11 = tabs
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = tabs
 
         with tab1:
             show_table(make_group_table(filtered_df, "battingFeetId", display_name="Foot Type"), "foot_type")
@@ -281,16 +209,12 @@ if fetch_data:
             show_table(make_group_table(filtered_df, "bowlingHandId", display_name="Bowling Hand"), "bowling_hand")
         with tab10:
             show_table(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"), "shot_area")
-        with tab11:
-            st.markdown("[Strike Rate/Average]:")
-            length_line_df = make_length_line_table(filtered_df)
-            length_line_df.reset_index(inplace=True)  # ensure 'Length' comes as a visible column
-            show_table(length_line_df, "length_line")
+            pass
     else:
         st.info("Select batting player(s) in the Filters to view batting analysis.")
 
     # ---------- Bowling Section ----------
-    # Show bowling only if bowlers is selected AND batting_players is NOT selected
+    # Show bowling only if bowling is selected AND batting_players is NOT selected
     if bowlers and not batting_players:
         st.markdown("---")
         st.subheader("🎯 ODI Bowling Analysis")
@@ -334,7 +258,6 @@ if fetch_data:
                 "b_batter"
             )
     elif not batting_players:
-        # only show this info if there are no batting players selected (so user expects bowling)
         st.info("Select bowler(s) in the Filters to view bowling analysis for that bowler(s).")
 
 else:
