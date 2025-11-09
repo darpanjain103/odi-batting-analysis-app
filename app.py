@@ -198,11 +198,6 @@ if fetch_data:
             show_table(make_group_table(filtered_df, "lengthTypeId", display_name="Length"), "length")
         with tab3:
             show_table(make_group_table(filtered_df, "lineTypeId", display_name="Line"), "line")
-        with tab11:
-            st.markdown("[Strike Rate/Average]:")
-            length_line_df = make_length_line_table(filtered_df)
-            length_line_df.reset_index(inplace=True)  # ensure 'Length' comes as a visible column
-            show_table(length_line_df, "length_line")
 
         with tab4:
             show_table(make_group_table(filtered_df, "bowlingDetailId", display_name="Ball Type"), "ball_type")
@@ -218,6 +213,11 @@ if fetch_data:
             show_table(make_group_table(filtered_df, "bowlingHandId", display_name="Bowling Hand"), "bowling_hand")
         with tab10:
             show_table(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"), "shot_area")
+        with tab11:
+            st.markdown("[Strike Rate/Average]:")
+            length_line_df = make_length_line_table(filtered_df)
+            length_line_df.reset_index(inplace=True)  # ensure 'Length' comes as a visible column
+            show_table(length_line_df, "length_line")    
             pass
     else:
         st.info("Select batting player(s) in the Filters to view batting analysis.")
