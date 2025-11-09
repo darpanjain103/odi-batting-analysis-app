@@ -121,7 +121,7 @@ if fetch_data:
         group["lengthTypeId"] = group["lengthTypeId"].map(
             df.set_index("lengthTypeId")["lengthTypeName"].to_dict()
         ).fillna(group["lengthTypeId"])
-    if "lineTypeName" in df.columns:
+        if "lineTypeName" in df.columns:
         group["lineTypeId"] = group["lineTypeId"].map(
             df.set_index("lineTypeId")["lineTypeName"].to_dict()
         ).fillna(group["lineTypeId"])
