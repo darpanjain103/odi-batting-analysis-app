@@ -102,6 +102,21 @@ if fetch_data:
 
         return group
 
+    # ✅ NEW FUNCTION — Length-Line table
+    def make_length_line_table(df):
+        temp_df = df[df["isWide"] != True]
+        group = temp_df.groupby(["lengthTypeId", "lineTypeId"]).agg(
+            Total_Runs=("runsScored", "sum"),
+            Balls_Faced=("runsScored", "count"),
+            Outs=("isWicket", "sum")
+        ).reset_index()
+        group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
+        group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"],2) if x["Outs"]>0 else "-", axis=1)
+        group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
+        pivot_table = group.pivot(index="lengthTypeId", columns="lineTypeId", values="SR / Avg").fillna("-")
+        pivot_table.index.name = "Length"
+        return pivot_table
+
     # ---------- Bowling helper ----------
     def make_bowling_group_table_with_total(df, group_by_col, display_name=None):
         if df.empty:
@@ -184,10 +199,10 @@ if fetch_data:
     st.subheader("🏏 ODI Batting Analysis")
     if batting_players:
         tabs = st.tabs([
-            "Foot Type", "Length", "Line", "Ball Type", "Bowling End", "Bowling Type",
+            "Foot Type", "Length", "Line", "Length-Line", "Ball Type", "Bowling End", "Bowling Type",
             "Bowler", "Shot", "Bowling Hand", "Shot Area"
         ])
-        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = tabs
+        tab1, tab2, tab3, tab11, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = tabs
 
         with tab1:
             show_table(make_group_table(filtered_df, "battingFeetId", display_name="Foot Type"), "foot_type")
@@ -195,6 +210,8 @@ if fetch_data:
             show_table(make_group_table(filtered_df, "lengthTypeId", display_name="Length"), "length")
         with tab3:
             show_table(make_group_table(filtered_df, "lineTypeId", display_name="Line"), "line")
+        with tab11:
+            st.dataframe(make_length_line_table(filtered_df))
         with tab4:
             show_table(make_group_table(filtered_df, "bowlingDetailId", display_name="Ball Type"), "ball_type")
         with tab5:
@@ -214,7 +231,6 @@ if fetch_data:
         st.info("Select batting player(s) in the Filters to view batting analysis.")
 
     # ---------- Bowling Section ----------
-    # Show bowling only if bowling is selected AND batting_players is NOT selected
     if bowlers and not batting_players:
         st.markdown("---")
         st.subheader("🎯 ODI Bowling Analysis")
