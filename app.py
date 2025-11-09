@@ -123,6 +123,7 @@ if fetch_data:
         group["Length"] = group["lengthTypeId"].map(length_map).fillna(group["lengthTypeId"])
         group["Line"] = group["lineTypeId"].map(line_map).fillna(group["lineTypeId"])
 
+        # ✅ Ensure Length on Y-axis, Line on X-axis
         pivot_table = group.pivot(index="Length", columns="Line", values="SR / Avg").fillna("-")
 
         # Add total column
