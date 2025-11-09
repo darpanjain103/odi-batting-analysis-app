@@ -22,8 +22,17 @@ years = st.sidebar.multiselect("Select Year(s)", sorted(df["Year"].dropna().uniq
 # ✅ Add Fetch button
 fetch_data = st.sidebar.button("Fetch")
 
-# Apply filters only when Fetch is clicked
 if fetch_data:
+    # show active filters for quick debugging
+    st.markdown("**Active filters:**")
+    st.write({
+        "batting_players_count": len(batting_players),
+        "bowlers_count": len(bowlers),
+        "bowling_types_count": len(bowling_types),
+        "over_range": over_range,
+        "years_count": len(years)
+    })
+
     # ---------- Batting filtered dataset ----------
     filtered_df = df.copy()
     if batting_players:
@@ -31,6 +40,7 @@ if fetch_data:
     if bowling_types:
         filtered_df = filtered_df[filtered_df["bowlingTypeId"].isin(bowling_types)]
     if bowlers:
+        # keep this so selecting a bowler still filters batting view where bowler faced that batter
         filtered_df = filtered_df[filtered_df["bowlerPlayer"].isin(bowlers)]
     if years:
         filtered_df = filtered_df[filtered_df["Year"].isin(years)]
@@ -45,8 +55,12 @@ if fetch_data:
     bowling_filtered_df = bowling_filtered_df[
         (bowling_filtered_df["overNumber"] >= over_range[0]) & (bowling_filtered_df["overNumber"] <= over_range[1])
     ]
+    # IMPORTANT: if the user selected bowlers, filter bowling dataset by them
     if bowlers:
         bowling_filtered_df = bowling_filtered_df[bowling_filtered_df["bowlerPlayer"].isin(bowlers)]
+    # also apply bowling types if selected (useful for bowling analysis)
+    if bowling_types:
+        bowling_filtered_df = bowling_filtered_df[bowling_filtered_df["bowlingTypeId"].isin(bowling_types)]
 
     # ---------- Batting helper ----------
     def make_group_table(df, group_by_col, display_name=None):
@@ -102,6 +116,68 @@ if fetch_data:
 
         return group
 
+    # ---------- Bowling helper ----------
+    def make_bowling_group_table_with_total(df, group_by_col, display_name=None):
+        if df.empty:
+            return pd.DataFrame(columns=[display_name or group_by_col, "Runs", "Extras", "Balls", "Wickets", "Dot", "Dot %", "Fours", "Sixes", "Boundaries", "Boundary %", "False Shot", "False Shot %", "Average", "Economy"])
+        temp = df.copy()
+        temp_non_wide = temp[(temp["isWide"] != True) & (temp["isNoBall"] != True)]
+        def count_valid_wickets(x):
+            return ((x["isWicket"] == True) & (~x["dismissalTypeId"].isin(["RunOut", "RunOutSub"]))).sum()
+        group = temp.groupby(group_by_col).apply(count_valid_wickets).reset_index(name="Wickets")
+        control_group = temp_non_wide.groupby(group_by_col).agg(
+            Control=("battingConnectionId", lambda x: x.fillna('None').isin(['Left', 'Middled', 'WellTimed', 'None']).sum())
+        ).reset_index()
+        if group_by_col == "battingPlayer":
+            runs_agg = temp.groupby(group_by_col).agg(
+                Runs=("runsScored", "sum"),
+                Extras=("extras", "sum"),
+                Dot=("runsConceded", lambda x: (x == 0).sum()),
+                Fours=("runsScored", lambda x: (x == 4).sum()),
+                Sixes=("runsScored", lambda x: (x == 6).sum())
+            ).reset_index()
+        else:
+            runs_agg = temp.groupby(group_by_col).agg(
+                Runs=("runsConceded", "sum"),
+                Extras=("extras", "sum"),
+                Dot=("runsConceded", lambda x: (x == 0).sum()),
+                Fours=("runsConceded", lambda x: (x == 4).sum()),
+                Sixes=("runsConceded", lambda x: (x == 6).sum())
+            ).reset_index()
+        group = pd.merge(group, runs_agg, on=group_by_col, how="left")
+        balls_group = temp_non_wide.groupby(group_by_col).agg(Balls=("ballNumber", "count")).reset_index()
+        group = pd.merge(group, balls_group, on=group_by_col, how="left")
+        group = pd.merge(group, control_group, on=group_by_col, how="left")
+        group["Boundaries"] = group["Fours"] + group["Sixes"]
+        group["Boundary %"] = round((group["Boundaries"] / group["Balls"]) * 100, 2)
+        group["False Shot"] = group["Balls"] - group["Control"]
+        group["False Shot %"] = round((group["False Shot"] / group["Balls"]) * 100, 2)
+        group["Dot %"] = round((group["Dot"] / group["Balls"]) * 100, 2)
+        group["Average"] = group.apply(lambda x: round(x["Runs"]/x["Wickets"], 2) if x["Wickets"] > 0 else "-", axis=1)
+        group["Economy"] = group.apply(lambda x: round((x["Runs"] / x["Balls"]) * 6, 2) if x["Balls"] > 0 else "-", axis=1)
+        total_row = pd.DataFrame({
+            group_by_col: ["Total"],
+            "Runs": [group["Runs"].sum()],
+            "Extras": [group["Extras"].sum()],
+            "Balls": [group["Balls"].sum()],
+            "Wickets": [group["Wickets"].sum()],
+            "Dot": [group["Dot"].sum()],
+            "Dot %": [round((group["Dot"].sum() / group["Balls"].sum()) * 100, 2) if group["Balls"].sum() > 0 else 0],
+            "Fours": [group["Fours"].sum()],
+            "Sixes": [group["Sixes"].sum()],
+            "Boundaries": [group["Boundaries"].sum()],
+            "Boundary %": [round((group["Boundaries"].sum() / group["Balls"].sum()) * 100, 2) if group["Balls"].sum() > 0 else 0],
+            "False Shot": [group["False Shot"].sum()],
+            "False Shot %": [round((group["False Shot"].sum() / group["Balls"].sum()) * 100, 2)],
+            "Average": ["-" if group["Wickets"].sum() == 0 else round(group["Runs"].sum() / group["Wickets"].sum(), 2)],
+            "Economy": [round((group["Runs"].sum() / group["Balls"].sum()) * 6, 2) if group["Balls"].sum() > 0 else "-"]
+        })
+        group = pd.concat([group, total_row], ignore_index=True)
+        group = group[[group_by_col, "Runs", "Balls", "Wickets", "Average", "Economy", "Dot %", "Boundary %", "False Shot %"]]
+        if display_name:
+            group.rename(columns={group_by_col: display_name}, inplace=True)
+        return group
+
     # ---------- ✅ Corrected Length-Line Table (lengths now show on Y-axis properly) ----------
     def make_length_line_table(df):
         temp_df = df[df["isWide"] != True]
@@ -116,7 +192,6 @@ if fetch_data:
         group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"], 2) if x["Outs"] > 0 else "-", axis=1)
         group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
 
-        # ✅ Map readable names
         if "lengthTypeName" in df.columns:
             length_map = df.drop_duplicates("lengthTypeId").set_index("lengthTypeId")["lengthTypeName"].to_dict()
             group["lengthName"] = group["lengthTypeId"].map(length_map).fillna(group["lengthTypeId"])
@@ -129,10 +204,8 @@ if fetch_data:
         else:
             group["lineName"] = group["lineTypeId"]
 
-        # ✅ Pivot table with readable Y-axis (Length)
         pivot_table = group.pivot(index="lengthName", columns="lineName", values="SR / Avg").fillna("-")
 
-        # Add total column
         total_col = []
         for length in pivot_table.index:
             temp = group[group["lengthName"] == length]
@@ -144,7 +217,6 @@ if fetch_data:
             total_col.append(f"{sr} / {avg}")
         pivot_table["Total"] = total_col
 
-        # Add total row
         total_row = []
         for line in pivot_table.columns:
             if line == "Total":
@@ -184,13 +256,10 @@ if fetch_data:
     st.subheader("🏏 ODI Batting Analysis")
     if batting_players:
         tabs = st.tabs([
-            "Foot Type", "Length", "Line", "Ball Type", "Bowling End",
-            "Bowling Type", "Bowler", "Shot", "Bowling Hand", "Shot Area", "Length-Line"
+            "Foot Type", "Length", "Line", "Ball Type", "Bowling End", "Bowling Type",
+            "Bowler", "Shot", "Bowling Hand", "Shot Area", "Length-Line"
         ])
-        (
-            tab1, tab2, tab3, tab4, tab5,
-            tab6, tab7, tab8, tab9, tab10, tab11
-        ) = tabs
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11 = tabs
 
         with tab1:
             show_table(make_group_table(filtered_df, "battingFeetId", display_name="Foot Type"), "foot_type")
@@ -198,7 +267,6 @@ if fetch_data:
             show_table(make_group_table(filtered_df, "lengthTypeId", display_name="Length"), "length")
         with tab3:
             show_table(make_group_table(filtered_df, "lineTypeId", display_name="Line"), "line")
-
         with tab4:
             show_table(make_group_table(filtered_df, "bowlingDetailId", display_name="Ball Type"), "ball_type")
         with tab5:
@@ -217,10 +285,57 @@ if fetch_data:
             st.markdown("[Strike Rate/Average]:")
             length_line_df = make_length_line_table(filtered_df)
             length_line_df.reset_index(inplace=True)  # ensure 'Length' comes as a visible column
-            show_table(length_line_df, "length_line")    
-            pass
+            show_table(length_line_df, "length_line")
     else:
         st.info("Select batting player(s) in the Filters to view batting analysis.")
+
+    # ---------- Bowling Section ----------
+    # Show bowling only if bowlers is selected AND batting_players is NOT selected
+    if bowlers and not batting_players:
+        st.markdown("---")
+        st.subheader("🎯 ODI Bowling Analysis")
+        bowling_tabs = st.tabs([
+            "Foot Type", "Bowling End", "Ball Type", "Shot", "Length", "Line", "Batter"
+        ])
+        btab1, btab2, btab3, btab4, btab5, btab6, btab7 = bowling_tabs
+        with btab1:
+            show_table(
+                make_bowling_group_table_with_total(bowling_filtered_df, "battingFeetId", display_name="Foot Type"),
+                "b_foot"
+            )
+        with btab2:
+            show_table(
+                make_bowling_group_table_with_total(bowling_filtered_df, "bowlingFromId", display_name="Bowling End"),
+                "b_end"
+            )
+        with btab3:
+            show_table(
+                make_bowling_group_table_with_total(bowling_filtered_df, "bowlingDetailId", display_name="Ball Type"),
+                "b_ball_type"
+            )
+        with btab4:
+            show_table(
+                make_bowling_group_table_with_total(bowling_filtered_df, "battingShotTypeId", display_name="Shot"),
+                "b_shot"
+            )
+        with btab5:
+            show_table(
+                make_bowling_group_table_with_total(bowling_filtered_df, "lengthTypeId", display_name="Length"),
+                "b_length"
+            )
+        with btab6:
+            show_table(
+                make_bowling_group_table_with_total(bowling_filtered_df, "lineTypeId", display_name="Line"),
+                "b_line"
+            )
+        with btab7:
+            show_table(
+                make_bowling_group_table_with_total(bowling_filtered_df, "battingPlayer", display_name="Batter"),
+                "b_batter"
+            )
+    elif not batting_players:
+        # only show this info if there are no batting players selected (so user expects bowling)
+        st.info("Select bowler(s) in the Filters to view bowling analysis for that bowler(s).")
 
 else:
     st.info("👈 Adjust filters and click Fetch to view results.")
