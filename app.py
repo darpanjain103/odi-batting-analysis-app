@@ -184,8 +184,8 @@ if fetch_data:
     st.subheader("🏏 ODI Batting Analysis")
     if batting_players:
         tabs = st.tabs([
-            "Foot Type", "Length", "Line", "Length-Line", "Ball Type", "Bowling End",
-            "Bowling Type", "Bowler", "Shot", "Bowling Hand", "Shot Area"
+            "Foot Type", "Length", "Line", "Ball Type", "Bowling End",
+            "Bowling Type", "Bowler", "Shot", "Bowling Hand", "Shot Area", "Length-Line"
         ])
         (
             tab1, tab2, tab3, tab4, tab5,
