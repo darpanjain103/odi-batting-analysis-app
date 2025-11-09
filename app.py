@@ -102,7 +102,7 @@ if fetch_data:
 
         return group
 
-    # ---------- Length-Line Combined Table ----------
+    # ---------- ✅ Restored Original Working Length-Line Table ----------
     def make_length_line_table(df):
         temp_df = df[df["isWide"] != True]
 
@@ -116,20 +116,12 @@ if fetch_data:
         group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"], 2) if x["Outs"] > 0 else "-", axis=1)
         group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
 
-        # ✅ Map readable names if available
-        length_map = df.set_index("lengthTypeId")["lengthTypeName"].to_dict() if "lengthTypeName" in df.columns else {}
-        line_map = df.set_index("lineTypeId")["lineTypeName"].to_dict() if "lineTypeName" in df.columns else {}
-
-        group["Length"] = group["lengthTypeId"].map(length_map).fillna(group["lengthTypeId"])
-        group["Line"] = group["lineTypeId"].map(line_map).fillna(group["lineTypeId"])
-
-        # ✅ Ensure Length on Y-axis, Line on X-axis
-        pivot_table = group.pivot(index="Length", columns="Line", values="SR / Avg").fillna("-")
+        pivot_table = group.pivot(index="lengthTypeId", columns="lineTypeId", values="SR / Avg").fillna("-")
 
         # Add total column
         total_col = []
         for length in pivot_table.index:
-            temp = group[group["Length"] == length]
+            temp = group[group["lengthTypeId"] == length]
             runs = temp["Total_Runs"].sum()
             balls = temp["Balls_Faced"].sum()
             outs = temp["Outs"].sum()
@@ -146,7 +138,7 @@ if fetch_data:
                 balls = group["Balls_Faced"].sum()
                 outs = group["Outs"].sum()
             else:
-                temp = group[group["Line"] == line]
+                temp = group[group["lineTypeId"] == line]
                 runs = temp["Total_Runs"].sum()
                 balls = temp["Balls_Faced"].sum()
                 outs = temp["Outs"].sum()
