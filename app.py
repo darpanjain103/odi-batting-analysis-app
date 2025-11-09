@@ -102,54 +102,68 @@ if fetch_data:
 
         return group
 
-    # ---------- ✅ Restored Original Working Length-Line Table ----------
-    def make_length_line_table(df):
-        temp_df = df[df["isWide"] != True]
+    # ---------- ✅ Final Fixed Length-Line Table (keeps totals, adds length names) ----------
+def make_length_line_table(df):
+    temp_df = df[df["isWide"] != True]
 
-        group = temp_df.groupby(["lengthTypeId", "lineTypeId"]).agg(
-            Total_Runs=("runsScored", "sum"),
-            Balls_Faced=("runsScored", "count"),
-            Outs=("isWicket", "sum")
-        ).reset_index()
+    group = temp_df.groupby(["lengthTypeId", "lineTypeId"]).agg(
+        Total_Runs=("runsScored", "sum"),
+        Balls_Faced=("runsScored", "count"),
+        Outs=("isWicket", "sum")
+    ).reset_index()
 
-        group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
-        group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"], 2) if x["Outs"] > 0 else "-", axis=1)
-        group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
+    group["Strike Rate"] = round((group["Total_Runs"] / group["Balls_Faced"]) * 100, 2)
+    group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"], 2) if x["Outs"] > 0 else "-", axis=1)
+    group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
 
-        pivot_table = group.pivot(index="lengthTypeId", columns="lineTypeId", values="SR / Avg").fillna("-")
+    # ✅ Map readable names for both length and line
+    if "lengthTypeName" in df.columns:
+        length_map = df.drop_duplicates("lengthTypeId").set_index("lengthTypeId")["lengthTypeName"].to_dict()
+        group["Length"] = group["lengthTypeId"].map(length_map).fillna(group["lengthTypeId"])
+    else:
+        group["Length"] = group["lengthTypeId"]
 
-        # Add total column
-        total_col = []
-        for length in pivot_table.index:
-            temp = group[group["lengthTypeId"] == length]
+    if "lineTypeName" in df.columns:
+        line_map = df.drop_duplicates("lineTypeId").set_index("lineTypeId")["lineTypeName"].to_dict()
+        group["Line"] = group["lineTypeId"].map(line_map).fillna(group["lineTypeId"])
+    else:
+        group["Line"] = group["lineTypeId"]
+
+    # ✅ Pivot with readable labels — Length as index (Y-axis), Line as columns (X-axis)
+    pivot_table = group.pivot(index="Length", columns="Line", values="SR / Avg").fillna("-")
+
+    # Add total column
+    total_col = []
+    for length in pivot_table.index:
+        temp = group[group["Length"] == length]
+        runs = temp["Total_Runs"].sum()
+        balls = temp["Balls_Faced"].sum()
+        outs = temp["Outs"].sum()
+        sr = round(runs / balls * 100, 2) if balls > 0 else 0
+        avg = round(runs / outs, 2) if outs > 0 else "-"
+        total_col.append(f"{sr} / {avg}")
+    pivot_table["Total"] = total_col
+
+    # Add total row
+    total_row = []
+    for line in pivot_table.columns:
+        if line == "Total":
+            runs = group["Total_Runs"].sum()
+            balls = group["Balls_Faced"].sum()
+            outs = group["Outs"].sum()
+        else:
+            temp = group[group["Line"] == line]
             runs = temp["Total_Runs"].sum()
             balls = temp["Balls_Faced"].sum()
             outs = temp["Outs"].sum()
-            sr = round(runs / balls * 100, 2) if balls > 0 else 0
-            avg = round(runs / outs, 2) if outs > 0 else "-"
-            total_col.append(f"{sr} / {avg}")
-        pivot_table["Total"] = total_col
+        sr = round(runs / balls * 100, 2) if balls > 0 else 0
+        avg = round(runs / outs, 2) if outs > 0 else "-"
+        total_row.append(f"{sr} / {avg}")
+    pivot_table.loc["Total"] = total_row
 
-        # Add total row
-        total_row = []
-        for line in pivot_table.columns:
-            if line == "Total":
-                runs = group["Total_Runs"].sum()
-                balls = group["Balls_Faced"].sum()
-                outs = group["Outs"].sum()
-            else:
-                temp = group[group["lineTypeId"] == line]
-                runs = temp["Total_Runs"].sum()
-                balls = temp["Balls_Faced"].sum()
-                outs = temp["Outs"].sum()
-            sr = round(runs / balls * 100, 2) if balls > 0 else 0
-            avg = round(runs / outs, 2) if outs > 0 else "-"
-            total_row.append(f"{sr} / {avg}")
-        pivot_table.loc["Total"] = total_row
-
-        pivot_table.index.name = "Length"
-        return pivot_table
-
+    pivot_table.index.name = "Length"
+    return pivot_table
+    
     # ---------- Display helper ----------
     def show_table(df, key):
         df_display = df.copy()
