@@ -211,6 +211,9 @@ if fetch_data:
             show_table(make_group_table(filtered_df, "fieldingPosition", display_name="Shot Area"), "shot_area")
         with tab11:
             st.markdown("[Strike Rate/Average]:")
+            length_line_df = make_length_line_table(filtered_df)
+            length_line_df.reset_index(inplace=True)
+            show_table(length_line_df, "length_line")
             pass
     else:
         st.info("Select batting player(s) in the Filters to view batting analysis.")
