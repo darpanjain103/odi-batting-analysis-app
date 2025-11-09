@@ -202,6 +202,7 @@ if fetch_data:
             length_line_df = make_length_line_table(filtered_df)
             length_line_df.reset_index(inplace=True)  # ensure 'Length' comes as a visible column
             show_table(length_line_df, "length_line")
+            st.markdown("[Strike Rate/Average]:")
 
         with tab4:
             show_table(make_group_table(filtered_df, "bowlingDetailId", display_name="Ball Type"), "ball_type")
