@@ -188,8 +188,8 @@ if fetch_data:
             "Bowling Type", "Bowler", "Shot", "Bowling Hand", "Shot Area"
         ])
         (
-            tab1, tab2, tab3, tab11, tab4, tab5,
-            tab6, tab7, tab8, tab9, tab10
+            tab1, tab2, tab3, tab4, tab5,
+            tab6, tab7, tab8, tab9, tab10, tab11
         ) = tabs
 
         with tab1:
