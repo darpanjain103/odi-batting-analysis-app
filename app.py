@@ -117,6 +117,14 @@ if fetch_data:
         group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"],2) if x["Outs"]>0 else "-", axis=1)
         group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
 
+        if "lengthTypeName" in df.columns:
+        group["lengthTypeId"] = group["lengthTypeId"].map(
+            df.set_index("lengthTypeId")["lengthTypeName"].to_dict()
+        ).fillna(group["lengthTypeId"])
+    if "lineTypeName" in df.columns:
+        group["lineTypeId"] = group["lineTypeId"].map(
+            df.set_index("lineTypeId")["lineTypeName"].to_dict()
+        ).fillna(group["lineTypeId"])
         pivot_table = group.pivot(index="lengthTypeId", columns="lineTypeId", values="SR / Avg").fillna("-")
 
         # Add total column (for each length)
