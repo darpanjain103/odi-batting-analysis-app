@@ -102,8 +102,7 @@ if fetch_data:
 
         return group
 
-
-        # ---------- Length-Line Combined Table ----------
+    # ---------- Length-Line Combined Table ----------
     def make_length_line_table(df):
         temp_df = df[df["isWide"] != True]
 
@@ -117,23 +116,19 @@ if fetch_data:
         group["Average"] = group.apply(lambda x: round(x["Total_Runs"]/x["Outs"], 2) if x["Outs"] > 0 else "-", axis=1)
         group["SR / Avg"] = group["Strike Rate"].astype(str) + " / " + group["Average"].astype(str)
 
-        # ✅ Proper indentation here
-        if "lengthTypeName" in df.columns:
-            group["lengthTypeId"] = group["lengthTypeId"].map(
-                df.set_index("lengthTypeId")["lengthTypeName"].to_dict()
-            ).fillna(group["lengthTypeId"])
+        # ✅ Map readable names if available
+        length_map = df.set_index("lengthTypeId")["lengthTypeName"].to_dict() if "lengthTypeName" in df.columns else {}
+        line_map = df.set_index("lineTypeId")["lineTypeName"].to_dict() if "lineTypeName" in df.columns else {}
 
-        if "lineTypeName" in df.columns:
-            group["lineTypeId"] = group["lineTypeId"].map(
-                df.set_index("lineTypeId")["lineTypeName"].to_dict()
-            ).fillna(group["lineTypeId"])
+        group["Length"] = group["lengthTypeId"].map(length_map).fillna(group["lengthTypeId"])
+        group["Line"] = group["lineTypeId"].map(line_map).fillna(group["lineTypeId"])
 
-        pivot_table = group.pivot(index="lengthTypeId", columns="lineTypeId", values="SR / Avg").fillna("-")
+        pivot_table = group.pivot(index="Length", columns="Line", values="SR / Avg").fillna("-")
 
-        # Add total column (for each length)
+        # Add total column
         total_col = []
         for length in pivot_table.index:
-            temp = group[group["lengthTypeId"] == length]
+            temp = group[group["Length"] == length]
             runs = temp["Total_Runs"].sum()
             balls = temp["Balls_Faced"].sum()
             outs = temp["Outs"].sum()
@@ -142,24 +137,21 @@ if fetch_data:
             total_col.append(f"{sr} / {avg}")
         pivot_table["Total"] = total_col
 
-        # Add total row (for each line)
+        # Add total row
         total_row = []
         for line in pivot_table.columns:
             if line == "Total":
                 runs = group["Total_Runs"].sum()
                 balls = group["Balls_Faced"].sum()
                 outs = group["Outs"].sum()
-                sr = round(runs / balls * 100, 2) if balls > 0 else 0
-                avg = round(runs / outs, 2) if outs > 0 else "-"
-                total_row.append(f"{sr} / {avg}")
             else:
-                temp = group[group["lineTypeId"] == line]
+                temp = group[group["Line"] == line]
                 runs = temp["Total_Runs"].sum()
                 balls = temp["Balls_Faced"].sum()
                 outs = temp["Outs"].sum()
-                sr = round(runs / balls * 100, 2) if balls > 0 else 0
-                avg = round(runs / outs, 2) if outs > 0 else "-"
-                total_row.append(f"{sr} / {avg}")
+            sr = round(runs / balls * 100, 2) if balls > 0 else 0
+            avg = round(runs / outs, 2) if outs > 0 else "-"
+            total_row.append(f"{sr} / {avg}")
         pivot_table.loc["Total"] = total_row
 
         pivot_table.index.name = "Length"
@@ -180,7 +172,6 @@ if fetch_data:
         num_rows = len(df_display)
         dynamic_height = int(header_height + (num_rows * row_height))
         st.dataframe(df_display, use_container_width=True, height=dynamic_height)
-
 
     # ---------- Batting Section ----------
     st.subheader("🏏 ODI Batting Analysis")
@@ -219,7 +210,6 @@ if fetch_data:
             pass
     else:
         st.info("Select batting player(s) in the Filters to view batting analysis.")
-
 
     # ---------- Bowling Section ----------
     if bowlers and not batting_players:
