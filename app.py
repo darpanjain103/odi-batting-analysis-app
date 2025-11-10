@@ -13,7 +13,7 @@ df["Year"] = df["ballDateTime"].dt.year.astype("Int64")
 
 # Sidebar filters
 st.sidebar.header("Filters")
-batting_players = st.sidebar.multiselect("Select Batting Player(s)", df["battingPlayer"].dropna().unique())
+batting_players = st.sidebar.multiselect("Select Batter(s)", df["battingPlayer"].dropna().unique())
 bowling_types = st.sidebar.multiselect("Select Bowling Type(s)", df["bowlingTypeId"].dropna().unique())
 bowlers = st.sidebar.multiselect("Select Bowler(s)", df["bowlerPlayer"].dropna().unique())
 over_range = st.sidebar.slider("Over Range", 0, int(df["overNumber"].max()), (0, 10))
