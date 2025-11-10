@@ -327,7 +327,7 @@ if fetch_data:
                 "b_batter"
             )
     elif not batting_players:
-        st.info("Select bowler(s) in the Filters to view bowling analysis for that bowler(s).")
+        st.info("Select bowler(s) in the Filters to view bowling analysis.")
 
 else:
     st.info("👈 Adjust filters and click Fetch to view results.")
