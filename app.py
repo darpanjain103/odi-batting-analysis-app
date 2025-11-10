@@ -280,7 +280,7 @@ if fetch_data:
             show_table(length_line_df, "length_line")
             pass
     else:
-        st.info("Select batting player(s) in the Filters to view batting analysis.")
+        st.info("Select Batter(s) in the Filters to view batting analysis.")
 
     # ---------- Bowling Section ----------
     # Show bowling only if bowling is selected AND batting_players is NOT selected
@@ -327,7 +327,7 @@ if fetch_data:
                 "b_batter"
             )
     elif not batting_players:
-        st.info("Select bowler(s) in the Filters to view bowling analysis.")
+        st.info("Select Bowler(s) in the Filters to view bowling analysis.")
 
 else:
     st.info("👈 Adjust filters and click Fetch to view results.")
